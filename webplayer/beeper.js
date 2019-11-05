@@ -1,59 +1,50 @@
-const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+export default class Beeper {
+  constructor(frequency = 440, wave = "triangle", volume = 0.3) {
+    this.frequency = frequency;
+    this.wave = wave;
+    this.volume = volume;
 
-let beepFrequency = 440;
-let beepWave = "triangle";
-let beepVolume = 0.3;
+    this.playing = false;
+    this.oscillator = null;
+    this.gainNode = null;
 
-let playing = false;
-let oscillator = null;
-let gainNode = null;
+    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  }
 
-export function InitBeep(frequency = 440, wave = "triangle", volume = 0.3) {
-  beepFrequency = frequency;
-  beepWave = wave;
-  beepVolume = volume;
-}
+  start() {
+    if (this.playing) return;
+    this.playing = true;
 
-export function StartBeep() {
-  if (playing) return;
-  playing = true;
-  createBeeper();
+    this.createOscillator();
+    this.createGainNode();
 
-  oscillator.start();
-}
+    this.oscillator.connect(this.gainNode);
+    this.gainNode.connect(this.audioContext.destination);
 
-export function StopBeep() {
-  if (!playing) return;
-  playing = false;
+    this.oscillator.start();
+  }
 
-  const now = audioContext.currentTime;
+  stop() {
+    if (!this.playing) return;
+    this.playing = false;
 
-  // workaround for firefox audio click bug
-  gainNode.gain.setValueAtTime(beepVolume, now + 0.012);
-  gainNode.gain.linearRampToValueAtTime(0.0, now + 0.0149985);
+    const now = this.audioContext.currentTime;
 
-  oscillator.stop(now + 0.015);
-}
+    // workaround for firefox audio click bug
+    this.gainNode.gain.setValueAtTime(this.volume, now + 0.012);
+    this.gainNode.gain.linearRampToValueAtTime(0.0, now + 0.0149985);
 
-function createBeeper() {
-  oscillator = createOscillator();
-  gainNode = createGainNode();
+    this.oscillator.stop(now + 0.015);
+  }
 
-  oscillator.connect(gainNode);
-  gainNode.connect(audioContext.destination);
-}
+  createOscillator() {
+    this.oscillator = this.audioContext.createOscillator();
+    this.oscillator.type = this.wave;
+    this.oscillator.frequency.value = this.frequency;
+  }
 
-function createOscillator() {
-  let oscillator = audioContext.createOscillator();
-  oscillator.type = beepWave;
-  oscillator.frequency.value = beepFrequency;
-
-  return oscillator;
-}
-
-function createGainNode() {
-  let gainNode = audioContext.createGain();
-  gainNode.gain.value = beepVolume;
-
-  return gainNode;
+  createGainNode() {
+    this.gainNode = this.audioContext.createGain();
+    this.gainNode.gain.value = this.volume;
+  }
 }
