@@ -1,3 +1,11 @@
+/target
+**/*.rs.bk
+Cargo.lock
+bin/
+pkg/
+*.log
+dist/
+tmp/
 .cache
-dist
 node_modules
+.cargo-ok

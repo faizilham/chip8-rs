@@ -1,12 +1,8 @@
-import Beeper from "./webplayer/beeper"
+// import styles here
+import "./style/main.css"
 
-
-(function() {
-  const startbtn = document.getElementById("startbtn");
-  const stopbtn = document.getElementById("stopbtn");
-
-  const beeper = new Beeper();
-
-  startbtn.onclick = () => beeper.start();
-  stopbtn.onclick = () => beeper.stop();
-})()
+// A dependency graph that contains any wasm must all be imported
+// asynchronously. This file does the single async import, so
+// that no one else needs to worry about it again.
+import("./module.js")
+  .catch(e => console.error("Error importing module:", e));

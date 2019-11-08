@@ -1,16 +1,24 @@
 {
-    "search.useIgnoreFiles": true,
-    "editor.insertSpaces": true,
+  "search.useIgnoreFiles": true,
+  "editor.insertSpaces": true,
 
-    "[javascript]": {
-        "editor.tabSize": 2
-    },
+  "[javascript]": {
+    "editor.tabSize": 2
+  },
 
-    "[html]": {
-        "editor.tabSize": 2
-    },
+  "[html]": {
+    "editor.tabSize": 2
+  },
 
-    "[rust]": {
-        "editor.tabSize": 4
-    }
+  "[json]": {
+    "editor.tabSize": 2
+  },
+
+  "[css]": {
+    "editor.tabSize": 2
+  },
+
+  "[rust]": {
+    "editor.tabSize": 4
+  }
 }
