@@ -1,14 +1,18 @@
 export default class Beeper {
   constructor(frequency = 440, wave = "triangle", volume = 0.3) {
-    this.frequency = frequency;
-    this.wave = wave;
-    this.volume = volume;
+    this.set_config(frequency, wave, volume);
 
     this.playing = false;
     this.oscillator = null;
     this.gainNode = null;
 
     this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  }
+
+  set_config(frequency, wave, volume) {
+    this.frequency = frequency;
+    this.wave = wave;
+    this.volume = volume;
   }
 
   start() {
