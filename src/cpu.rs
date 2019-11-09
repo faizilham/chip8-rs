@@ -70,15 +70,19 @@ impl CPU {
             },
 
             // 1nnn jump
-            0x1 => self.op_1nnn_jump(get_nnn(high, low)),
+            0x1 => self.op_1nnn_jump(high, low),
 
             // 2nnn call
-            0x2 => self.op_2nnn_call(get_nnn(high, low)),
+            0x2 => self.op_2nnn_call(high, low),
 
-            // 3xkk - SE Vx, byte
-            0x3 => {
-                Ok(())
-            }
+            // 3xkk skip eq Vx, byte
+            0x3 => self.op_3xkk_skipeq(high, low),
+
+            // 4xkk skip neq Vx, byte
+            0x4 => self.op_4xkk_skipneq(high, low),
+
+            // 5xy0 skip eq Vx, Vy
+            0x5 => self.op_5xy0_skipeqv(high, low),
 
             _ => {
                 runtime_error("unknown opcode")
@@ -94,8 +98,9 @@ impl CPU {
 
     // OPCODES
 
-    fn op_1nnn_jump(&mut self, nnn: u16) -> ExecutionResult {
-        let addr = nnn as usize;
+    // 1nnn jump
+    fn op_1nnn_jump(&mut self, high: u8, low: u8) -> ExecutionResult {
+        let addr = get_nnn(high, low) as usize;
 
         // handle trap jump
         if self.pc == addr {
@@ -107,7 +112,8 @@ impl CPU {
         Ok(())
     }
 
-    fn op_2nnn_call(&mut self, nnn: u16) -> ExecutionResult {
+    // 2nnn call
+    fn op_2nnn_call(&mut self, high: u8, low: u8) -> ExecutionResult {
         if self.sp == STACK_SIZE {
             return runtime_error("stack overflow");
         }
@@ -115,8 +121,44 @@ impl CPU {
         self.stack[self.sp] = self.pc;
         self.sp += 1;
 
-        let addr = nnn as usize;
+        let addr = get_nnn(high, low) as usize;
         self.pc = addr;
+
+        Ok(())
+    }
+
+    // 3xkk skip eq Vx, byte
+    fn op_3xkk_skipeq(&mut self, high: u8, low: u8) -> ExecutionResult {
+        let x = get2(high, low) as usize;
+        let kk = get_kk(high, low);
+
+        if self.register[x] == kk {
+            self.pc += 2;
+        }
+
+        Ok(())
+    }
+
+    // 4xkk skip neq Vx, byte
+    fn op_4xkk_skipneq(&mut self, high: u8, low: u8) -> ExecutionResult {
+        let x = get2(high, low) as usize;
+        let kk = get_kk(high, low);
+
+        if self.register[x] != kk {
+            self.pc += 2;
+        }
+
+        Ok(())
+    }
+
+    // 5xy0 skip eq Vx, Vy
+    fn op_5xy0_skipeqv(&mut self, high: u8, low: u8) -> ExecutionResult {
+        let x = get2(high, low) as usize;
+        let y = get3(high, low) as usize;
+
+        if self.register[x] == self.register[y] {
+            self.pc += 2;
+        }
 
         Ok(())
     }
@@ -204,14 +246,15 @@ mod test {
     fn test_op_1nnn_jump() {
         let mut cpu = CPU::new();
 
+        let high = 0x14; let low = 0x56;
         let addr = 0x456;
 
-        let result = cpu.op_1nnn_jump(addr);
+        let result = cpu.op_1nnn_jump(high, low);
 
         assert_eq!(result, Ok(()));
-        assert_eq!(cpu.pc, addr as usize);
+        assert_eq!(cpu.pc, addr);
 
-        let result = cpu.op_1nnn_jump(addr);
+        let result = cpu.op_1nnn_jump(high, low);
         assert_eq!(result, Err(ExecutionStatus::Halt));
     }
 
@@ -219,10 +262,11 @@ mod test {
     fn test_op_2nnn_call() {
         let mut cpu = CPU::new();
 
+        let high = 0x14; let low = 0x56;
         let addr = 0x456;
 
         let last_pc = cpu.pc;
-        let result = cpu.op_2nnn_call(addr);
+        let result = cpu.op_2nnn_call(high, low);
 
         assert_eq!(result, Ok(()));
         assert_eq!(cpu.pc, addr as usize);
@@ -231,8 +275,84 @@ mod test {
 
         cpu.sp = STACK_SIZE;
 
-        let result = cpu.op_2nnn_call(addr);
+        let result = cpu.op_2nnn_call(high, low);
         assert_eq!(result, Err(ExecutionStatus::RuntimeError));
+    }
+
+    #[wasm_bindgen_test]
+    fn test_op_3xkk_skipeq() {
+        let mut cpu = CPU::new();
+
+        let high = 0x30; let low = 0xAF;
+
+        let val = 0xAF;
+        cpu.register[0] = val;
+
+        let pc = cpu.pc;
+
+        let result = cpu.op_3xkk_skipeq(high, low);
+
+        assert_eq!(result, Ok(()));
+        assert_eq!(cpu.pc, pc + 2);
+
+        let high = 0x31; let low = 0xAF;
+
+        let pc = cpu.pc;
+        let result = cpu.op_3xkk_skipeq(high, low);
+
+        assert_eq!(result, Ok(()));
+        assert_eq!(cpu.pc, pc);
+    }
+
+    #[wasm_bindgen_test]
+    fn test_op_4xkk_skipneq() {
+        let mut cpu = CPU::new();
+
+        let high = 0x40; let low = 0xAF;
+
+        let val = 0xAF;
+        cpu.register[0] = val;
+
+        let pc = cpu.pc;
+
+        let result = cpu.op_4xkk_skipneq(high, low);
+
+        assert_eq!(result, Ok(()));
+        assert_eq!(cpu.pc, pc);
+
+        let high = 0x41; let low = 0xAF;
+
+        let pc = cpu.pc;
+        let result = cpu.op_4xkk_skipneq(high, low);
+
+        assert_eq!(result, Ok(()));
+        assert_eq!(cpu.pc, pc + 2);
+    }
+
+    #[wasm_bindgen_test]
+    fn test_op_5xy0_skipeqv() {
+        let mut cpu = CPU::new();
+
+        let high = 0x50; let low = 0x20;
+
+        let val = 0xAF;
+        cpu.register[0] = val;
+        cpu.register[2] = val;
+
+        let pc = cpu.pc;
+
+        let result = cpu.op_5xy0_skipeqv(high, low);
+
+        assert_eq!(result, Ok(()));
+        assert_eq!(cpu.pc, pc + 2);
+
+        let high = 0x51; let low = 0x20;
+
+        let pc = cpu.pc;
+        let result = cpu.op_5xy0_skipeqv(high, low);
+
+        assert_eq!(result, Ok(()));
+        assert_eq!(cpu.pc, pc);
     }
 
     // test utils
