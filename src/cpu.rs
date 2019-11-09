@@ -62,9 +62,14 @@ impl CPU {
         // parse
         let result = match get1(high, low) {
             0x0 => match low {
-                0xE0 => unimplemented("clear display"), // 00E0 clear display
-                0xEE => unimplemented("return"),
-                _ => Ok(()) // -- 0nnn syscall, ignored
+                // 00e0 clear display
+                0xE0 => unimplemented("clear display"),
+
+                // 00ee return
+                0xEE => self.op_00ee_ret(),
+
+                // -- 0nnn syscall, ignored
+                _ => Ok(())
             },
 
             // 1nnn jump
@@ -89,7 +94,7 @@ impl CPU {
             0x7 => self.op_7xkk_incr(high, low),
 
             _ => {
-                runtime_error("unknown opcode")
+                runtime_error("Unknown opcode")
             }
         };
 
@@ -101,6 +106,19 @@ impl CPU {
     }
 
     // OPCODES
+
+    // 00EE return
+    fn op_00ee_ret(&mut self) -> ExecutionResult {
+        if self.sp == 0{
+            return runtime_error("Stack underflow");
+        }
+
+        self.sp -= 1;
+
+        self.pc = self.stack[self.sp];
+
+        Ok(())
+    }
 
     // 1nnn jump
     fn op_1nnn_jump(&mut self, high: u8, low: u8) -> ExecutionResult {
@@ -119,7 +137,7 @@ impl CPU {
     // 2nnn call
     fn op_2nnn_call(&mut self, high: u8, low: u8) -> ExecutionResult {
         if self.sp == STACK_SIZE {
-            return runtime_error("stack overflow");
+            return runtime_error("Stack overflow");
         }
 
         self.stack[self.sp] = self.pc;
@@ -293,6 +311,30 @@ mod test {
         let ptr_value = unsafe { *ptr };
 
         assert_eq!(expected_value, ptr_value);
+    }
+
+    #[wasm_bindgen_test]
+    fn test_op_00ee_ret() {
+        let mut tester = CPUTester::new();
+
+        let addr = 0x456;
+
+        // success case
+        tester.set_ops(0x00, 0xEE);
+        tester.cpu.stack[0] = addr;
+        tester.cpu.sp = 1;
+
+        let result = tester.tick_cpu();
+
+        assert_eq!(result, ExecutionStatus::OK);
+        assert_eq!(tester.cpu.pc, addr as usize);
+        assert_eq!(tester.cpu.sp, 0);
+
+        // stack underflow case
+        tester.reset();
+
+        let result = tester.tick_cpu();
+        assert_eq!(result, ExecutionStatus::RuntimeError);
     }
 
     #[wasm_bindgen_test]
