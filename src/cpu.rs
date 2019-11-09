@@ -272,6 +272,7 @@ mod test {
 
         let addr = 0x456;
 
+        // success case
         tester.set_ops(0x14, 0x56);
 
         let result = tester.tick_cpu();
@@ -279,6 +280,7 @@ mod test {
         assert_eq!(result, ExecutionStatus::OK);
         assert_eq!(tester.cpu.pc, addr);
 
+        // trap jump case
         tester.set_ops(0x12, 0x00);
 
         let result = tester.tick_cpu();
@@ -289,9 +291,10 @@ mod test {
     fn test_op_2nnn_call() {
         let mut tester = CPUTester::new();
 
-        tester.set_ops(0x24, 0x56);
-
         let addr = 0x456;
+
+        // success case
+        tester.set_ops(0x24, 0x56);
 
         let last_pc = tester.cpu.pc + 2;
         let result = tester.tick_cpu();
@@ -301,6 +304,7 @@ mod test {
         assert_eq!(tester.cpu.sp, 1);
         assert_eq!(tester.cpu.stack[0], last_pc);
 
+        // stack overflow case
         tester.reset();
 
         tester.cpu.sp = STACK_SIZE;
@@ -315,6 +319,7 @@ mod test {
 
         let val = 0xAF;
 
+        // skip case
         tester.set_ops(0x30, 0xAF);
         tester.cpu.register[0] = val;
 
@@ -325,6 +330,7 @@ mod test {
         assert_eq!(result, ExecutionStatus::OK);
         assert_eq!(tester.cpu.pc, pc + 2);
 
+        // no skip case
         tester.set_ops(0x31, 0xAF);
         tester.cpu.register[0] = val;
 
@@ -341,6 +347,7 @@ mod test {
 
         let val = 0xAF;
 
+        // no skip case
         tester.set_ops(0x40, 0xAF);
         tester.cpu.register[0] = val;
 
@@ -351,6 +358,7 @@ mod test {
         assert_eq!(result, ExecutionStatus::OK);
         assert_eq!(tester.cpu.pc, pc);
 
+        // skip case
         tester.set_ops(0x41, 0xAF);
         tester.cpu.register[0] = val;
 
@@ -367,6 +375,7 @@ mod test {
 
         let val = 0xAF;
 
+        // skip case
         tester.set_ops(0x50, 0x20);
         tester.cpu.register[0] = val;
         tester.cpu.register[2] = val;
@@ -378,6 +387,7 @@ mod test {
         assert_eq!(result, ExecutionStatus::OK);
         assert_eq!(tester.cpu.pc, pc + 2);
 
+        // no skip case
         tester.set_ops(0x50, 0x10);
         tester.cpu.register[0] = val;
         tester.cpu.register[2] = val;
