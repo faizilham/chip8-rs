@@ -114,7 +114,7 @@ impl CPU {
 	                // 8xy4 add Vx = Vx + Vy, VF = carry
                     0x4 => self.op_8xy4_add(x, y),
 
-                    // 8xy5 sub Vx = Vx - Vy, VF = not borrow (Vx > Vy)
+                    // 8xy5 sub Vx = Vx - Vy, VF = not borrow (Vx >= Vy)
                     0x5 => self.op_8xy5_sub(x, y),
 
 	                // 8xy6 shr Vx = Vx >> 1. VF = last bit
@@ -272,12 +272,12 @@ impl CPU {
         ExecutionStatus::OK
     }
 
-    // 8xy5 sub Vx = Vx - Vy, VF = not borrow (Vx > Vy)
+    // 8xy5 sub Vx = Vx - Vy, VF = not borrow (Vx >= Vy)
     fn op_8xy5_sub(&mut self, x: usize, y: usize) -> ExecutionStatus {
         let temp = self.register[x] as i16 - self.register[y] as i16;
 
         self.register[x] = (temp & 0x00FF) as u8;
-        self.register[0xF] = ((temp >> 8) & 1 ^ 1) as u8;
+        self.register[0xF] = ((temp >> 8) + 1) as u8;
 
         ExecutionStatus::OK
     }
@@ -819,10 +819,9 @@ mod test {
 
     #[wasm_bindgen_test]
     fn test_op_8xy5_sub() {
-        // 8xy5 sub Vx = Vx - Vy, VF = not borrow (Vx > Vy)
         let mut tester = CPUTester::new();
 
-        // non borrow case Vx > Vy
+        // non borrow case Vx >= Vy
         let x = 0xFF;
         let y = 0x01;
         let sum = 0xFE;
