@@ -113,9 +113,14 @@ impl CPU {
 
                     0x4 => unimplemented("add"),
                     0x5 => unimplemented("sub"),
-                    0x6 => unimplemented("shr"),
+
+	                // 8xy6 shr Vx = Vx >> 1. VF = last bit
+                    0x6 => self.op_8xy6_shr(x, y),
+
                     0x7 => unimplemented("subn"),
-                    0xE => unimplemented("shl"),
+
+                    // 8xyE shl Vx = Vx << 1. VF = first bit
+                    0xE => self.op_8xye_shl(x, y),
 
 
                     _ => runtime_error("Unknown opcode")
@@ -255,6 +260,21 @@ impl CPU {
     // 8xy3 xor Vx ^= Vy
     fn op_8xy3_xor(&mut self, x: usize, y: usize) -> ExecutionResult {
         self.register[x] ^= self.register[y];
+        Ok(())
+    }
+
+    // 8xy6 shr Vx = Vx >> 1. VF = last bit
+    fn op_8xy6_shr(&mut self, x: usize, _y: usize) -> ExecutionResult {
+        self.register[0xF] = self.register[x] & 0x01;
+        self.register[x] >>= 1;
+        Ok(())
+    }
+
+    // 8xyE shl Vx = Vx << 1. VF = first bit
+    fn op_8xye_shl(&mut self, x: usize, _y: usize) -> ExecutionResult {
+        self.register[0xF] = (self.register[x] & 0x80) >> 7;
+        self.register[x] <<= 1;
+
         Ok(())
     }
 }
@@ -687,6 +707,74 @@ mod test {
 
         assert_eq!(result, ExecutionStatus::OK);
         assert_eq!(tester.cpu.register[1], expected);
+
+
+    }
+
+    #[wasm_bindgen_test]
+    fn test_op_8xy6_shr() {
+        let mut tester = CPUTester::new();
+
+        // underflow case
+        let val = 0b0000_0111;
+        let fin_val = val >> 1;
+        let expect_vf = 1;
+
+        tester.set_ops(0x80, 0x16);
+        tester.cpu.register[0] = val;
+
+        let result = tester.tick_cpu();
+
+        assert_eq!(result, ExecutionStatus::OK);
+        assert_eq!(tester.cpu.register[0], fin_val);
+        assert_eq!(tester.cpu.register[0xF], expect_vf);
+
+        // non underflow case
+        let val = 0b0000_0110;
+        let fin_val = val >> 1;
+        let expect_vf = 0;
+
+        tester.set_ops(0x80, 0x16);
+        tester.cpu.register[0] = val;
+
+        let result = tester.tick_cpu();
+
+        assert_eq!(result, ExecutionStatus::OK);
+        assert_eq!(tester.cpu.register[0], fin_val);
+        assert_eq!(tester.cpu.register[0xF], expect_vf);
+    }
+
+    #[wasm_bindgen_test]
+    fn test_op_8xye_shl() {
+        let mut tester = CPUTester::new();
+
+        // overflow case
+        let val = 0b1101_0000;
+        let fin_val = val << 1;
+        let expect_vf = 1;
+
+        tester.set_ops(0x80, 0x1E);
+        tester.cpu.register[0] = val;
+
+        let result = tester.tick_cpu();
+
+        assert_eq!(result, ExecutionStatus::OK);
+        assert_eq!(tester.cpu.register[0], fin_val);
+        assert_eq!(tester.cpu.register[0xF], expect_vf);
+
+        // non overflow case
+        let val = 0b0101_0000;
+        let fin_val = val << 1;
+        let expect_vf = 0;
+
+        tester.set_ops(0x80, 0x1E);
+        tester.cpu.register[0] = val;
+
+        let result = tester.tick_cpu();
+
+        assert_eq!(result, ExecutionStatus::OK);
+        assert_eq!(tester.cpu.register[0], fin_val);
+        assert_eq!(tester.cpu.register[0xF], expect_vf);
     }
 
     // test utils
