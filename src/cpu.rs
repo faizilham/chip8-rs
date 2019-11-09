@@ -650,6 +650,16 @@ mod test {
 
         assert_eq!(result, ExecutionStatus::OK);
         assert_eq!(tester.cpu.register[1], expected);
+
+        // self case
+        let val = 0xFA;
+        tester.set_ops(0x80, 0x01);
+        tester.cpu.register[0] = val;
+
+        let result = tester.tick_cpu();
+
+        assert_eq!(result, ExecutionStatus::OK);
+        assert_eq!(tester.cpu.register[0], val);
     }
 
     #[wasm_bindgen_test]
@@ -679,6 +689,16 @@ mod test {
 
         assert_eq!(result, ExecutionStatus::OK);
         assert_eq!(tester.cpu.register[1], expected);
+
+        // self case
+        let val = 0xFA;
+        tester.set_ops(0x80, 0x02);
+        tester.cpu.register[0] = val;
+
+        let result = tester.tick_cpu();
+
+        assert_eq!(result, ExecutionStatus::OK);
+        assert_eq!(tester.cpu.register[0], val);
     }
 
     #[wasm_bindgen_test]
@@ -708,6 +728,15 @@ mod test {
 
         assert_eq!(result, ExecutionStatus::OK);
         assert_eq!(tester.cpu.register[1], expected);
+
+        // self case
+        tester.set_ops(0x80, 0x03);
+        tester.cpu.register[0] = 0xFA;
+
+        let result = tester.tick_cpu();
+
+        assert_eq!(result, ExecutionStatus::OK);
+        assert_eq!(tester.cpu.register[0], 0);
     }
 
     #[wasm_bindgen_test]
