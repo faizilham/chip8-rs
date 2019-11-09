@@ -5,8 +5,6 @@ import Beeper from "./webplayer/beeper"
 
 wasm.greet();
 
-
-
 const startbtn = document.getElementById("startbtn");
 const stopbtn = document.getElementById("stopbtn");
 
