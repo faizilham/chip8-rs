@@ -12,6 +12,18 @@ macro_rules! log {
     ($( $t:tt )*) => {};
 }
 
+#[cfg(any(test, debug))]
+macro_rules! debug {
+    ($( $t:tt )*) => {
+        web_sys::console::log_1(&format!( $( $t )* ).into());
+    };
+}
+
+#[cfg(not(any(test, debug)))]
+macro_rules! debug {
+    ($( $t:tt )*) => {};
+}
+
 pub fn set_panic_hook() {
     // When the `console_error_panic_hook` feature is enabled, we can call the
     // `set_panic_hook` function at least once during initialization, and then

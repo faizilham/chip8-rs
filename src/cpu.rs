@@ -102,8 +102,8 @@ impl CPU {
     fn op_1nnn_jump(&mut self, high: u8, low: u8) -> ExecutionResult {
         let addr = get_nnn(high, low) as usize;
 
-        // handle trap jump
-        if self.pc == addr {
+        // handle trap jump: prev_pc (current_pc - 2) = addr
+        if self.pc == addr + 2 {
             return halt();
         }
 
@@ -219,15 +219,39 @@ fn get_nnn(high: u8, low: u8) -> u16 {
     (front << 8) | back
 }
 
+// UNIT TESTS
 
 #[cfg(test)]
 mod test {
     use wasm_bindgen_test::*;
     use crate::cpu::*;
 
-    // test cpu methodsq
+    struct CPUTester {
+        cpu: CPU
+    }
 
-    #[test]
+    impl CPUTester {
+        pub fn new() -> CPUTester {
+            CPUTester { cpu: CPU::new() }
+        }
+
+        fn reset(&mut self) {
+            self.cpu.reset();
+        }
+
+        fn set_ops(&mut self, high: u8, low: u8) {
+            self.cpu.reset();
+            self.cpu.memory[PROGRAM_START] = high;
+            self.cpu.memory[PROGRAM_START + 1] = low;
+        }
+
+        fn tick_cpu(&mut self) -> ExecutionStatus {
+            self.cpu.tick()
+        }
+    }
+
+    // test cpu method
+
     #[wasm_bindgen_test]
     fn test_get_program_memory() {
         let mut cpu = CPU::new();
@@ -244,115 +268,125 @@ mod test {
 
     #[wasm_bindgen_test]
     fn test_op_1nnn_jump() {
-        let mut cpu = CPU::new();
+        let mut tester = CPUTester::new();
 
-        let high = 0x14; let low = 0x56;
         let addr = 0x456;
 
-        let result = cpu.op_1nnn_jump(high, low);
+        tester.set_ops(0x14, 0x56);
 
-        assert_eq!(result, Ok(()));
-        assert_eq!(cpu.pc, addr);
+        let result = tester.tick_cpu();
 
-        let result = cpu.op_1nnn_jump(high, low);
-        assert_eq!(result, Err(ExecutionStatus::Halt));
+        assert_eq!(result, ExecutionStatus::OK);
+        assert_eq!(tester.cpu.pc, addr);
+
+        tester.set_ops(0x12, 0x00);
+
+        let result = tester.tick_cpu();
+        assert_eq!(result, ExecutionStatus::Halt);
     }
 
     #[wasm_bindgen_test]
     fn test_op_2nnn_call() {
-        let mut cpu = CPU::new();
+        let mut tester = CPUTester::new();
 
-        let high = 0x14; let low = 0x56;
+        tester.set_ops(0x24, 0x56);
+
         let addr = 0x456;
 
-        let last_pc = cpu.pc;
-        let result = cpu.op_2nnn_call(high, low);
+        let last_pc = tester.cpu.pc + 2;
+        let result = tester.tick_cpu();
 
-        assert_eq!(result, Ok(()));
-        assert_eq!(cpu.pc, addr as usize);
-        assert_eq!(cpu.sp, 1);
-        assert_eq!(cpu.stack[0], last_pc);
+        assert_eq!(result, ExecutionStatus::OK);
+        assert_eq!(tester.cpu.pc, addr as usize);
+        assert_eq!(tester.cpu.sp, 1);
+        assert_eq!(tester.cpu.stack[0], last_pc);
 
-        cpu.sp = STACK_SIZE;
+        tester.reset();
 
-        let result = cpu.op_2nnn_call(high, low);
-        assert_eq!(result, Err(ExecutionStatus::RuntimeError));
+        tester.cpu.sp = STACK_SIZE;
+
+        let result = tester.tick_cpu();
+        assert_eq!(result, ExecutionStatus::RuntimeError);
     }
 
     #[wasm_bindgen_test]
     fn test_op_3xkk_skipeq() {
-        let mut cpu = CPU::new();
-
-        let high = 0x30; let low = 0xAF;
+        let mut tester = CPUTester::new();
 
         let val = 0xAF;
-        cpu.register[0] = val;
 
-        let pc = cpu.pc;
+        tester.set_ops(0x30, 0xAF);
+        tester.cpu.register[0] = val;
 
-        let result = cpu.op_3xkk_skipeq(high, low);
+        let pc = tester.cpu.pc + 2;
 
-        assert_eq!(result, Ok(()));
-        assert_eq!(cpu.pc, pc + 2);
+        let result = tester.tick_cpu();
 
-        let high = 0x31; let low = 0xAF;
+        assert_eq!(result, ExecutionStatus::OK);
+        assert_eq!(tester.cpu.pc, pc + 2);
 
-        let pc = cpu.pc;
-        let result = cpu.op_3xkk_skipeq(high, low);
+        tester.set_ops(0x31, 0xAF);
+        tester.cpu.register[0] = val;
 
-        assert_eq!(result, Ok(()));
-        assert_eq!(cpu.pc, pc);
+        let pc = tester.cpu.pc + 2;
+        let result = tester.tick_cpu();
+
+        assert_eq!(result, ExecutionStatus::OK);
+        assert_eq!(tester.cpu.pc, pc);
     }
 
     #[wasm_bindgen_test]
     fn test_op_4xkk_skipneq() {
-        let mut cpu = CPU::new();
-
-        let high = 0x40; let low = 0xAF;
+        let mut tester = CPUTester::new();
 
         let val = 0xAF;
-        cpu.register[0] = val;
 
-        let pc = cpu.pc;
+        tester.set_ops(0x40, 0xAF);
+        tester.cpu.register[0] = val;
 
-        let result = cpu.op_4xkk_skipneq(high, low);
+        let pc = tester.cpu.pc + 2;
 
-        assert_eq!(result, Ok(()));
-        assert_eq!(cpu.pc, pc);
+        let result = tester.tick_cpu();
 
-        let high = 0x41; let low = 0xAF;
+        assert_eq!(result, ExecutionStatus::OK);
+        assert_eq!(tester.cpu.pc, pc);
 
-        let pc = cpu.pc;
-        let result = cpu.op_4xkk_skipneq(high, low);
+        tester.set_ops(0x41, 0xAF);
+        tester.cpu.register[0] = val;
 
-        assert_eq!(result, Ok(()));
-        assert_eq!(cpu.pc, pc + 2);
+        let pc = tester.cpu.pc + 2;
+        let result = tester.tick_cpu();
+
+        assert_eq!(result, ExecutionStatus::OK);
+        assert_eq!(tester.cpu.pc, pc + 2);
     }
 
     #[wasm_bindgen_test]
     fn test_op_5xy0_skipeqv() {
-        let mut cpu = CPU::new();
-
-        let high = 0x50; let low = 0x20;
+        let mut tester = CPUTester::new();
 
         let val = 0xAF;
-        cpu.register[0] = val;
-        cpu.register[2] = val;
 
-        let pc = cpu.pc;
+        tester.set_ops(0x50, 0x20);
+        tester.cpu.register[0] = val;
+        tester.cpu.register[2] = val;
 
-        let result = cpu.op_5xy0_skipeqv(high, low);
+        let pc = tester.cpu.pc + 2;
 
-        assert_eq!(result, Ok(()));
-        assert_eq!(cpu.pc, pc + 2);
+        let result = tester.tick_cpu();
 
-        let high = 0x51; let low = 0x20;
+        assert_eq!(result, ExecutionStatus::OK);
+        assert_eq!(tester.cpu.pc, pc + 2);
 
-        let pc = cpu.pc;
-        let result = cpu.op_5xy0_skipeqv(high, low);
+        tester.set_ops(0x50, 0x10);
+        tester.cpu.register[0] = val;
+        tester.cpu.register[2] = val;
 
-        assert_eq!(result, Ok(()));
-        assert_eq!(cpu.pc, pc);
+        let pc = tester.cpu.pc + 2;
+        let result = tester.tick_cpu();
+
+        assert_eq!(result, ExecutionStatus::OK);
+        assert_eq!(tester.cpu.pc, pc);
     }
 
     // test utils
