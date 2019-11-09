@@ -61,12 +61,10 @@ impl CPU {
 
         // parse
         let result = match get1(high, low) {
-            0x0 => {
-                // 0x00E0 clear display
-                // 0x00EE return
-                // 0x0nnn -- syscall, not implemented
-                log!("bytes {:x} {:x}", high, low);
-                Ok(())
+            0x0 => match low {
+                0xE0 => unimplemented("clear display"), // 00E0 clear display
+                0xEE => unimplemented("return"),
+                _ => Ok(()) // -- 0nnn syscall, ignored
             },
 
             // 1nnn jump
@@ -83,6 +81,12 @@ impl CPU {
 
             // 5xy0 skip eq Vx, Vy
             0x5 => self.op_5xy0_skipeqv(high, low),
+
+            // 6xkk load Vx = byte
+            0x6 => self.op_6xkk_load(high, low),
+
+            // 7xkk incr Vx += byte
+            0x7 => self.op_7xkk_incr(high, low),
 
             _ => {
                 runtime_error("unknown opcode")
@@ -162,6 +166,26 @@ impl CPU {
 
         Ok(())
     }
+
+    // 6xkk load Vx = byte
+    fn op_6xkk_load(&mut self, high: u8, low: u8) -> ExecutionResult {
+        let x = get2(high, low) as usize;
+        let kk = get_kk(high, low);
+
+        self.register[x] = kk;
+
+        Ok(())
+    }
+
+    // 7xkk incr Vx += byte
+    fn op_7xkk_incr(&mut self, high: u8, low: u8) -> ExecutionResult {
+        let x = get2(high, low) as usize;
+        let kk = get_kk(high, low);
+
+        self.register[x] += kk;
+
+        Ok(())
+    }
 }
 
 // UTILITIES
@@ -176,12 +200,17 @@ pub enum ExecutionStatus {
 
 pub type ExecutionResult = Result<(), ExecutionStatus>;
 
-pub fn runtime_error(s : &str) -> ExecutionResult {
+fn runtime_error(s : &str) -> ExecutionResult {
     log!("Runtime Error: {}", s);
     Err(ExecutionStatus::RuntimeError)
 }
 
-pub fn halt() -> ExecutionResult {
+fn unimplemented(s: &str) -> ExecutionResult {
+    log!("Unimplemented Error: {}", s);
+    Err(ExecutionStatus::RuntimeError)
+}
+
+fn halt() -> ExecutionResult {
     Err(ExecutionStatus::Halt)
 }
 
@@ -397,6 +426,58 @@ mod test {
 
         assert_eq!(result, ExecutionStatus::OK);
         assert_eq!(tester.cpu.pc, pc);
+    }
+
+    #[wasm_bindgen_test]
+    fn test_op_6xkk_load() {
+        let mut tester = CPUTester::new();
+
+        let val = 0x56;
+
+        // reg 0 case
+        tester.set_ops(0x60, 0x56);
+
+        let result = tester.tick_cpu();
+
+        assert_eq!(result, ExecutionStatus::OK);
+        assert_eq!(tester.cpu.register[0], val);
+
+        // reg 3 case
+        let val = 0x52;
+
+        tester.set_ops(0x63, 0x52);
+
+        let result = tester.tick_cpu();
+
+        assert_eq!(result, ExecutionStatus::OK);
+        assert_eq!(tester.cpu.register[3], val);
+    }
+
+    #[wasm_bindgen_test]
+    fn test_op_7xkk_load() {
+        let mut tester = CPUTester::new();
+
+        let val = 0xCA + 0x02;
+
+        // reg 0 case
+        tester.set_ops(0x70, 0x02);
+        tester.cpu.register[0] = 0xCA;
+
+        let result = tester.tick_cpu();
+
+        assert_eq!(result, ExecutionStatus::OK);
+        assert_eq!(tester.cpu.register[0], val);
+
+        // reg 3 case
+        let val = 0x47 + 0x03;
+
+        tester.set_ops(0x73, 0x03);
+        tester.cpu.register[3] = 0x47;
+
+        let result = tester.tick_cpu();
+
+        assert_eq!(result, ExecutionStatus::OK);
+        assert_eq!(tester.cpu.register[3], val);
     }
 
     // test utils
