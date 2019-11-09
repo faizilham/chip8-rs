@@ -5,7 +5,7 @@ import { memory } from "./pkg/chip8_rs_bg"
 import Beeper from "./webplayer/beeper"
 
 function loadROM(machine) {
-  const rom = new Uint8Array(memory.buffer, machine.rom_ptr(), machine.max_rom_size());
+  const rom = new Uint8Array(memory.buffer, machine.get_rom_ptr(), machine.max_rom_size());
 
   const program = [
     0x01, 0x2a,

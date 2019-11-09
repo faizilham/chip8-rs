@@ -1,10 +1,12 @@
 use wasm_bindgen::prelude::*;
-use crate::memory::{PROGRAM_START, Memory};
+use crate::memory::{PROGRAM_START, Memory, allocate_memory};
 
 const STACK_SIZE : usize = 64;
 const REGISTER_SIZE : usize = 16;
 
 pub struct CPU {
+    memory: Memory,
+
     register: [u8; REGISTER_SIZE],
     ir: usize,                  // index register
     pc: usize,                  // program counter
@@ -18,9 +20,11 @@ pub struct CPU {
 impl CPU {
     pub fn new() -> CPU {
         let register = [0; REGISTER_SIZE];
-        let stack =[0; STACK_SIZE];
+        let stack = [0; STACK_SIZE];
+        let memory = allocate_memory();
 
         CPU {
+            memory,
             register,
             ir: 0,
             pc: PROGRAM_START,
@@ -30,17 +34,29 @@ impl CPU {
         }
     }
 
+    pub fn rom_ptr(&mut self) -> *mut u8 {
+        let ptr = unsafe {
+            self.memory.as_mut_ptr().offset(PROGRAM_START as isize)
+        };
+
+        ptr
+    }
+
     pub fn reset(&mut self) {
         self.ir = 0;
         self.pc = PROGRAM_START;
         self.sp = 0;
         self.dt = 0;
+
+        for i in 0..REGISTER_SIZE {
+            self.register[i] = 0;
+        }
     }
 
-    pub fn tick(&mut self, memory: &mut Memory) -> ExecutionStatus {
+    pub fn tick(&mut self) -> ExecutionStatus {
         // fetch
-        let high = memory[self.pc];
-        let low = memory[self.pc + 1];
+        let high = self.memory[self.pc];
+        let low = self.memory[self.pc + 1];
         self.pc += 2;
 
         // parse
@@ -165,6 +181,23 @@ fn get_nnn(high: u8, low: u8) -> u16 {
 #[cfg(test)]
 mod test {
     use crate::cpu::*;
+
+    // test cpu methods
+    #[test]
+    fn test_get_program_memory() {
+        let mut cpu = CPU::new();
+
+        let expected_value = 0x2A;
+
+        cpu.memory[PROGRAM_START] = expected_value;
+
+        let ptr = cpu.rom_ptr();
+        let ptr_value = unsafe { *ptr };
+
+        assert_eq!(expected_value, ptr_value);
+    }
+
+    // test utils
 
     #[test]
     fn test_get_utils() {
