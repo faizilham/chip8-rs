@@ -69,7 +69,7 @@ impl CPU {
                 0xEE => self.op_00ee_ret(),
 
                 // -- 0nnn syscall, ignored
-                _ => Ok(())
+                _ => ExecutionStatus::OK
             },
 
             // 1nnn jump
@@ -132,17 +132,13 @@ impl CPU {
             }
         };
 
-        if let Err(status) = result {
-            return status;
-        }
-
-        ExecutionStatus::OK
+        result
     }
 
     // OPCODES
 
     // 00EE return
-    fn op_00ee_ret(&mut self) -> ExecutionResult {
+    fn op_00ee_ret(&mut self) -> ExecutionStatus {
         if self.sp == 0{
             return runtime_error("Stack underflow");
         }
@@ -151,25 +147,25 @@ impl CPU {
 
         self.pc = self.stack[self.sp];
 
-        Ok(())
+        ExecutionStatus::OK
     }
 
     // 1nnn jump
-    fn op_1nnn_jump(&mut self, high: u8, low: u8) -> ExecutionResult {
+    fn op_1nnn_jump(&mut self, high: u8, low: u8) -> ExecutionStatus {
         let addr = get_nnn(high, low) as usize;
 
         // handle trap jump: prev_pc (current_pc - 2) = addr
         if self.pc == addr + 2 {
-            return halt();
+            return ExecutionStatus::Halt;
         }
 
         self.pc = addr;
 
-        Ok(())
+        ExecutionStatus::OK
     }
 
     // 2nnn call
-    fn op_2nnn_call(&mut self, high: u8, low: u8) -> ExecutionResult {
+    fn op_2nnn_call(&mut self, high: u8, low: u8) -> ExecutionStatus {
         if self.sp == STACK_SIZE {
             return runtime_error("Stack overflow");
         }
@@ -180,11 +176,11 @@ impl CPU {
         let addr = get_nnn(high, low) as usize;
         self.pc = addr;
 
-        Ok(())
+        ExecutionStatus::OK
     }
 
     // 3xkk skip eq Vx, byte
-    fn op_3xkk_skipeq(&mut self, high: u8, low: u8) -> ExecutionResult {
+    fn op_3xkk_skipeq(&mut self, high: u8, low: u8) -> ExecutionStatus {
         let x = get2(high, low) as usize;
         let kk = get_kk(high, low);
 
@@ -192,11 +188,11 @@ impl CPU {
             self.pc += 2;
         }
 
-        Ok(())
+        ExecutionStatus::OK
     }
 
     // 4xkk skip neq Vx, byte
-    fn op_4xkk_skipneq(&mut self, high: u8, low: u8) -> ExecutionResult {
+    fn op_4xkk_skipneq(&mut self, high: u8, low: u8) -> ExecutionStatus {
         let x = get2(high, low) as usize;
         let kk = get_kk(high, low);
 
@@ -204,11 +200,11 @@ impl CPU {
             self.pc += 2;
         }
 
-        Ok(())
+        ExecutionStatus::OK
     }
 
     // 5xy0 skip eq Vx, Vy
-    fn op_5xy0_skipeqv(&mut self, high: u8, low: u8) -> ExecutionResult {
+    fn op_5xy0_skipeqv(&mut self, high: u8, low: u8) -> ExecutionStatus {
         let x = get2(high, low) as usize;
         let y = get3(high, low) as usize;
 
@@ -216,66 +212,66 @@ impl CPU {
             self.pc += 2;
         }
 
-        Ok(())
+        ExecutionStatus::OK
     }
 
     // 6xkk load Vx = byte
-    fn op_6xkk_load(&mut self, high: u8, low: u8) -> ExecutionResult {
+    fn op_6xkk_load(&mut self, high: u8, low: u8) -> ExecutionStatus {
         let x = get2(high, low) as usize;
         let kk = get_kk(high, low);
 
         self.register[x] = kk;
 
-        Ok(())
+        ExecutionStatus::OK
     }
 
     // 7xkk incr Vx += byte
-    fn op_7xkk_incr(&mut self, high: u8, low: u8) -> ExecutionResult {
+    fn op_7xkk_incr(&mut self, high: u8, low: u8) -> ExecutionStatus {
         let x = get2(high, low) as usize;
         let kk = get_kk(high, low);
 
         self.register[x] += kk;
 
-        Ok(())
+        ExecutionStatus::OK
     }
 
     // 8xy0 set Vx = Vy
-    fn op_8xy0_set(&mut self, x: usize, y: usize) -> ExecutionResult {
+    fn op_8xy0_set(&mut self, x: usize, y: usize) -> ExecutionStatus {
         self.register[x] = self.register[y];
-        Ok(())
+        ExecutionStatus::OK
     }
 
     // 8xy1 or Vx |=Vy
-    fn op_8xy1_or(&mut self, x: usize, y: usize) -> ExecutionResult {
+    fn op_8xy1_or(&mut self, x: usize, y: usize) -> ExecutionStatus {
         self.register[x] |= self.register[y];
-        Ok(())
+        ExecutionStatus::OK
     }
 
     // 8xy2 and Vx &= Vy
-    fn op_8xy2_and(&mut self, x: usize, y: usize) -> ExecutionResult {
+    fn op_8xy2_and(&mut self, x: usize, y: usize) -> ExecutionStatus {
         self.register[x] &= self.register[y];
-        Ok(())
+        ExecutionStatus::OK
     }
 
     // 8xy3 xor Vx ^= Vy
-    fn op_8xy3_xor(&mut self, x: usize, y: usize) -> ExecutionResult {
+    fn op_8xy3_xor(&mut self, x: usize, y: usize) -> ExecutionStatus {
         self.register[x] ^= self.register[y];
-        Ok(())
+        ExecutionStatus::OK
     }
 
     // 8xy6 shr Vx = Vx >> 1. VF = last bit
-    fn op_8xy6_shr(&mut self, x: usize, _y: usize) -> ExecutionResult {
+    fn op_8xy6_shr(&mut self, x: usize, _y: usize) -> ExecutionStatus {
         self.register[0xF] = self.register[x] & 0x01;
         self.register[x] >>= 1;
-        Ok(())
+        ExecutionStatus::OK
     }
 
     // 8xyE shl Vx = Vx << 1. VF = first bit
-    fn op_8xye_shl(&mut self, x: usize, _y: usize) -> ExecutionResult {
+    fn op_8xye_shl(&mut self, x: usize, _y: usize) -> ExecutionStatus {
         self.register[0xF] = (self.register[x] & 0x80) >> 7;
         self.register[x] <<= 1;
 
-        Ok(())
+        ExecutionStatus::OK
     }
 }
 
@@ -289,22 +285,15 @@ pub enum ExecutionStatus {
     RuntimeError,
 }
 
-pub type ExecutionResult = Result<(), ExecutionStatus>;
-
-fn runtime_error(s : &str) -> ExecutionResult {
+fn runtime_error(s : &str) -> ExecutionStatus {
     log!("Runtime Error: {}", s);
-    Err(ExecutionStatus::RuntimeError)
+    ExecutionStatus::RuntimeError
 }
 
-fn unimplemented(s: &str) -> ExecutionResult {
+fn unimplemented(s: &str) -> ExecutionStatus {
     log!("Unimplemented Error: {}", s);
-    Err(ExecutionStatus::RuntimeError)
+    ExecutionStatus::RuntimeError
 }
-
-fn halt() -> ExecutionResult {
-    Err(ExecutionStatus::Halt)
-}
-
 
 #[inline]
 fn get1(high: u8, _low: u8) -> u8 {
