@@ -93,6 +93,35 @@ impl CPU {
             // 7xkk incr Vx += byte
             0x7 => self.op_7xkk_incr(high, low),
 
+            // binary operator instructions
+            0x8 => {
+                let x = get2(high, low) as usize;
+                let y = get3(high, low) as usize;
+
+                match get4(high, low) {
+                    // 8xy0 set Vx = Vy
+                    0x0 => self.op_8xy0_set(x, y),
+
+                    // 8xy1 or Vx |=Vy
+                    0x1 => self.op_8xy1_or(x, y),
+
+                    // 8xy2 and Vx &= Vy
+                    0x2 => self.op_8xy2_and(x, y),
+
+                    // 8xy3 xor Vx ^= Vy
+                    0x3 => self.op_8xy3_xor(x, y),
+
+                    0x4 => unimplemented("add"),
+                    0x5 => unimplemented("sub"),
+                    0x6 => unimplemented("shr"),
+                    0x7 => unimplemented("subn"),
+                    0xE => unimplemented("shl"),
+
+
+                    _ => runtime_error("Unknown opcode")
+                }
+            }
+
             _ => {
                 runtime_error("Unknown opcode")
             }
@@ -202,6 +231,30 @@ impl CPU {
 
         self.register[x] += kk;
 
+        Ok(())
+    }
+
+    // 8xy0 set Vx = Vy
+    fn op_8xy0_set(&mut self, x: usize, y: usize) -> ExecutionResult {
+        self.register[x] = self.register[y];
+        Ok(())
+    }
+
+    // 8xy1 or Vx |=Vy
+    fn op_8xy1_or(&mut self, x: usize, y: usize) -> ExecutionResult {
+        self.register[x] |= self.register[y];
+        Ok(())
+    }
+
+    // 8xy2 and Vx &= Vy
+    fn op_8xy2_and(&mut self, x: usize, y: usize) -> ExecutionResult {
+        self.register[x] &= self.register[y];
+        Ok(())
+    }
+
+    // 8xy3 xor Vx ^= Vy
+    fn op_8xy3_xor(&mut self, x: usize, y: usize) -> ExecutionResult {
+        self.register[x] ^= self.register[y];
         Ok(())
     }
 }
@@ -520,6 +573,120 @@ mod test {
 
         assert_eq!(result, ExecutionStatus::OK);
         assert_eq!(tester.cpu.register[3], val);
+    }
+
+    #[wasm_bindgen_test]
+    fn test_op_8xy0_set() {
+        let mut tester = CPUTester::new();
+
+        let val = 0x28;
+
+        // (0, 1) case
+        tester.set_ops(0x80, 0x10);
+        tester.cpu.register[0] = 0;
+        tester.cpu.register[1] = val;
+
+        let result = tester.tick_cpu();
+
+        assert_eq!(result, ExecutionStatus::OK);
+        assert_eq!(tester.cpu.register[0], val);
+
+        // (1, 0) case
+        tester.set_ops(0x81, 0x00);
+        tester.cpu.register[0] = val;
+        tester.cpu.register[1] = 0;
+
+        let result = tester.tick_cpu();
+
+        assert_eq!(result, ExecutionStatus::OK);
+        assert_eq!(tester.cpu.register[1], val);
+    }
+
+    #[wasm_bindgen_test]
+    fn test_op_8xy1_or() {
+        let mut tester = CPUTester::new();
+
+        let left = 0x28;
+        let right = 0x5E;
+        let expected = left | right;
+
+        // (0, 1) case
+        tester.set_ops(0x80, 0x11);
+        tester.cpu.register[0] = left;
+        tester.cpu.register[1] = right;
+
+        let result = tester.tick_cpu();
+
+        assert_eq!(result, ExecutionStatus::OK);
+        assert_eq!(tester.cpu.register[0], expected);
+
+        // (1, 0) case
+        tester.set_ops(0x81, 0x01);
+        tester.cpu.register[0] = right;
+        tester.cpu.register[1] = left;
+
+        let result = tester.tick_cpu();
+
+        assert_eq!(result, ExecutionStatus::OK);
+        assert_eq!(tester.cpu.register[1], expected);
+    }
+
+    #[wasm_bindgen_test]
+    fn test_op_8xy2_and() {
+        let mut tester = CPUTester::new();
+
+        let left = 0x28;
+        let right = 0x5E;
+        let expected = left & right;
+
+        // (0, 1) case
+        tester.set_ops(0x80, 0x12);
+        tester.cpu.register[0] = left;
+        tester.cpu.register[1] = right;
+
+        let result = tester.tick_cpu();
+
+        assert_eq!(result, ExecutionStatus::OK);
+        assert_eq!(tester.cpu.register[0], expected);
+
+        // (1, 0) case
+        tester.set_ops(0x81, 0x02);
+        tester.cpu.register[0] = right;
+        tester.cpu.register[1] = left;
+
+        let result = tester.tick_cpu();
+
+        assert_eq!(result, ExecutionStatus::OK);
+        assert_eq!(tester.cpu.register[1], expected);
+    }
+
+    #[wasm_bindgen_test]
+    fn test_op_8xy3_xor() {
+        let mut tester = CPUTester::new();
+
+        let left = 0x28;
+        let right = 0x5E;
+        let expected = left ^ right;
+
+        // (0, 1) case
+        tester.set_ops(0x80, 0x13);
+        tester.cpu.register[0] = left;
+        tester.cpu.register[1] = right;
+
+        let result = tester.tick_cpu();
+
+        assert_eq!(result, ExecutionStatus::OK);
+        assert_eq!(tester.cpu.register[0], expected);
+
+        // (1, 0) case
+        tester.set_ops(0x81, 0x03);
+        tester.cpu.register[0] = right;
+        tester.cpu.register[1] = left;
+
+        let result = tester.tick_cpu();
+
+        assert_eq!(result, ExecutionStatus::OK);
+        assert_eq!(tester.cpu.register[1], expected);
     }
 
     // test utils
