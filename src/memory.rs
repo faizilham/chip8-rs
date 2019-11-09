@@ -21,9 +21,10 @@ pub fn allocate_memory() -> Memory {
 
 #[cfg(test)]
 mod test {
+    use wasm_bindgen_test::*;
     use crate::memory::*;
 
-    #[test]
+    #[wasm_bindgen_test]
     fn test_allocate() {
         let mem = allocate_memory();
 

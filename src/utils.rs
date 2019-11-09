@@ -1,9 +1,15 @@
 extern crate web_sys;
 
+#[cfg(not(test))]
 macro_rules! log {
     ($( $t:tt )*) => {
         web_sys::console::log_1(&format!( $( $t )* ).into());
     };
+}
+
+#[cfg(test)]
+macro_rules! log {
+    ($( $t:tt )*) => {};
 }
 
 pub fn set_panic_hook() {

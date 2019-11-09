@@ -180,10 +180,13 @@ fn get_nnn(high: u8, low: u8) -> u16 {
 
 #[cfg(test)]
 mod test {
+    use wasm_bindgen_test::*;
     use crate::cpu::*;
 
-    // test cpu methods
+    // test cpu methodsq
+
     #[test]
+    #[wasm_bindgen_test]
     fn test_get_program_memory() {
         let mut cpu = CPU::new();
 
@@ -197,9 +200,44 @@ mod test {
         assert_eq!(expected_value, ptr_value);
     }
 
+    #[wasm_bindgen_test]
+    fn test_op_1nnn_jump() {
+        let mut cpu = CPU::new();
+
+        let addr = 0x456;
+
+        let result = cpu.op_1nnn_jump(addr);
+
+        assert_eq!(result, Ok(()));
+        assert_eq!(cpu.pc, addr as usize);
+
+        let result = cpu.op_1nnn_jump(addr);
+        assert_eq!(result, Err(ExecutionStatus::Halt));
+    }
+
+    #[wasm_bindgen_test]
+    fn test_op_2nnn_call() {
+        let mut cpu = CPU::new();
+
+        let addr = 0x456;
+
+        let last_pc = cpu.pc;
+        let result = cpu.op_2nnn_call(addr);
+
+        assert_eq!(result, Ok(()));
+        assert_eq!(cpu.pc, addr as usize);
+        assert_eq!(cpu.sp, 1);
+        assert_eq!(cpu.stack[0], last_pc);
+
+        cpu.sp = STACK_SIZE;
+
+        let result = cpu.op_2nnn_call(addr);
+        assert_eq!(result, Err(ExecutionStatus::RuntimeError));
+    }
+
     // test utils
 
-    #[test]
+    #[wasm_bindgen_test]
     fn test_get_utils() {
         let high = 0x1F;
         let low = 0x2A;

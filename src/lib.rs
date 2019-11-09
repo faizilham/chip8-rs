@@ -56,9 +56,3 @@ impl Machine {
         memory::MEM_SIZE - memory::PROGRAM_START + 1
     }
 }
-
-
-#[cfg(test)]
-mod test {
-
-}
