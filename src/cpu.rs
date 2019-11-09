@@ -111,7 +111,9 @@ impl CPU {
                     // 8xy3 xor Vx ^= Vy
                     0x3 => self.op_8xy3_xor(x, y),
 
-                    0x4 => unimplemented("add"),
+	                // 8xy4 add Vx = Vx + Vy, VF = carry
+                    0x4 => self.op_8xy4_add(x, y),
+
                     0x5 => unimplemented("sub"),
 
 	                // 8xy6 shr Vx = Vx >> 1. VF = last bit
@@ -256,6 +258,16 @@ impl CPU {
     // 8xy3 xor Vx ^= Vy
     fn op_8xy3_xor(&mut self, x: usize, y: usize) -> ExecutionStatus {
         self.register[x] ^= self.register[y];
+        ExecutionStatus::OK
+    }
+
+    // 8xy4 add Vx = Vx + Vy, VF = carry
+    fn op_8xy4_add(&mut self, x: usize, y: usize) -> ExecutionStatus {
+        let temp = self.register[x] as u16 + self.register[y] as u16;
+
+        self.register[x] = (temp & 0x00FF) as u8;
+        self.register[0xF] = (temp >> 8) as u8;
+
         ExecutionStatus::OK
     }
 
@@ -696,8 +708,73 @@ mod test {
 
         assert_eq!(result, ExecutionStatus::OK);
         assert_eq!(tester.cpu.register[1], expected);
+    }
 
+    #[wasm_bindgen_test]
+    fn test_op_8xy4_add() {
+        let mut tester = CPUTester::new();
 
+        // overflow case
+        let x = 0xFF;
+        let y = 0xFE;
+        let sum = 0xFD;
+        let expect_vf = 1;
+
+        tester.set_ops(0x80, 0x14);
+        tester.cpu.register[0] = x;
+        tester.cpu.register[1] = y;
+
+        let result = tester.tick_cpu();
+
+        assert_eq!(result, ExecutionStatus::OK);
+        assert_eq!(tester.cpu.register[0], sum);
+        assert_eq!(tester.cpu.register[0xF], expect_vf);
+
+        // non-overflow case
+        let x = 0xFA;
+        let y = 0x02;
+        let sum = 0xFC;
+        let expect_vf = 0;
+
+        tester.set_ops(0x80, 0x14);
+        tester.cpu.register[0] = x;
+        tester.cpu.register[1] = y;
+
+        let result = tester.tick_cpu();
+
+        assert_eq!(result, ExecutionStatus::OK);
+        assert_eq!(tester.cpu.register[0], sum);
+        assert_eq!(tester.cpu.register[0xF], expect_vf);
+
+        // reverse case
+        let x = 0xFF;
+        let y = 0xFE;
+        let sum = 0xFD;
+        let expect_vf = 1;
+
+        tester.set_ops(0x81, 0x04);
+        tester.cpu.register[0] = x;
+        tester.cpu.register[1] = y;
+
+        let result = tester.tick_cpu();
+
+        assert_eq!(result, ExecutionStatus::OK);
+        assert_eq!(tester.cpu.register[1], sum);
+        assert_eq!(tester.cpu.register[0xF], expect_vf);
+
+        // self case
+        let x = 0xFF;
+        let sum = 0xFE;
+        let expect_vf = 1;
+
+        tester.set_ops(0x80, 0x04);
+        tester.cpu.register[0] = x;
+
+        let result = tester.tick_cpu();
+
+        assert_eq!(result, ExecutionStatus::OK);
+        assert_eq!(tester.cpu.register[0], sum);
+        assert_eq!(tester.cpu.register[0xF], expect_vf);
     }
 
     #[wasm_bindgen_test]
