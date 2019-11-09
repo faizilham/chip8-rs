@@ -1,14 +1,35 @@
 // import wasm resources
 // wasm-pkg will be resolved to builds in ./pkg by webpack
-import * as wasm from "./pkg";
+import { Machine, ExecutionStatus } from "./pkg";
+import { memory } from "./pkg/chip8_rs_bg"
 import Beeper from "./webplayer/beeper"
 
-wasm.greet();
+function loadROM(machine) {
+  const rom = new Uint8Array(memory.buffer, machine.rom_ptr(), machine.max_rom_size());
+
+  const program = [
+    0x01, 0x2a,
+    0x0f, 0x3c,
+    0x12, 0x00,
+  ];
+
+  for (let i = 0; i < program.length; i++) {
+    rom[i] = program[i];
+  }
+
+  console.log("ROM loaded");
+}
+
+function loop() {
+  let result = machine.update_cpu();
+
+  if (result == ExecutionStatus.OK) {
+    requestAnimationFrame(loop)
+  }
+}
 
 const startbtn = document.getElementById("startbtn");
-const stopbtn = document.getElementById("stopbtn");
+startbtn.onclick = () => requestAnimationFrame(loop);
 
-const beeper = new Beeper();
-
-startbtn.onclick = () => beeper.start();
-stopbtn.onclick = () => beeper.stop();
+const machine = Machine.new();
+loadROM(machine)
