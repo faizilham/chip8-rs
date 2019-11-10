@@ -963,3 +963,112 @@ fn test_op_fx33_bcd() {
         assert_eq!(tester.cpu.memory[ir + i], bcd[i]);
     }
 }
+
+// fx55 storeg M[I..I+x] = [V0..Vx], I += x + 1
+
+#[wasm_bindgen_test]
+fn test_op_fx55_storeg() {
+    let mut tester = CPUTester::new();
+    let ir = 0x500;
+
+    // case x > 0 (len > 1)
+    let vals = [5, 2, 7, 4, 1];
+    let nvals = vals.len();
+    let x = (nvals - 1) as u8;
+
+    tester.set_ops(0xf0 | x, 0x55);
+    tester.cpu.ir = ir;
+
+    for i in 0..nvals {
+        tester.cpu.register[i] = vals[i];
+    }
+
+    let result = tester.tick_cpu();
+
+    assert_eq!(result, ExecutionStatus::OK);
+    for i in 0..nvals {
+        assert_eq!(tester.cpu.memory[ir + i], vals[i]);
+    }
+
+    assert_eq!(tester.cpu.ir, ir + x as usize + 1);
+
+    // case x == 0 (len == 1)
+    let vals = [7];
+    let nvals = vals.len();
+    let x = (nvals - 1) as u8;
+
+    tester.set_ops(0xf0 | x, 0x55);
+    tester.cpu.ir = ir;
+
+    for i in 0..nvals {
+        tester.cpu.register[i] = vals[i];
+    }
+
+    let result = tester.tick_cpu();
+
+    assert_eq!(result, ExecutionStatus::OK);
+    for i in 0..nvals {
+        assert_eq!(tester.cpu.memory[ir + i], vals[i]);
+    }
+
+    assert_eq!(tester.cpu.ir, ir + x as usize + 1);
+}
+
+// fx65 ldreg [V0..Vx] = M[I..I+x], I += x + 1
+#[wasm_bindgen_test]
+fn test_op_fx65_ldreg() {
+    let mut tester = CPUTester::new();
+
+    // case x > 0 (len > 1)
+    let ir = 0x500;
+    let vals = [5, 2, 7, 4, 1];
+    let nvals = vals.len();
+    let x = (nvals - 1) as u8;
+
+    tester.set_ops(0xf0 | x, 0x65);
+    tester.cpu.ir = ir;
+
+    for i in 0..nvals {
+        tester.cpu.memory[ir + i] = vals[i];
+    }
+
+    let result = tester.tick_cpu();
+
+    assert_eq!(result, ExecutionStatus::OK);
+    assert_eq!(tester.cpu.ir, ir + x as usize + 1);
+
+    for i in 0..nvals {
+        assert_eq!(tester.cpu.register[i], vals[i]);
+    }
+
+    for i in nvals..16-nvals {
+        assert_eq!(tester.cpu.register[i], 0);
+    }
+
+    // case x == 0 (len == 1)
+    let ir = 0x520;
+    let vals = [8];
+    let nvals = vals.len();
+    let x = (nvals - 1) as u8;
+
+    tester.set_ops(0xf0 | x, 0x65);
+    tester.cpu.ir = ir;
+
+    for i in 0..nvals {
+        tester.cpu.memory[ir + i] = vals[i];
+    }
+
+    let result = tester.tick_cpu();
+
+    assert_eq!(result, ExecutionStatus::OK);
+    assert_eq!(tester.cpu.ir, ir + x as usize + 1);
+
+    for i in 0..nvals {
+        assert_eq!(tester.cpu.register[i], vals[i]);
+    }
+
+    for i in nvals..16-nvals {
+        assert_eq!(tester.cpu.register[i], 0);
+    }
+
+}

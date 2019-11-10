@@ -1,5 +1,5 @@
 use wasm_bindgen::prelude::*;
-use crate::memory::{PROGRAM_START, Memory, allocate_memory};
+use crate::memory::{PROGRAM_START, MEM_SIZE, Memory, allocate_memory};
 use crate::utils;
 
 const STACK_SIZE : usize = 64;
@@ -174,7 +174,7 @@ impl CPU {
                     // fx15 loaddt DT = Vx
                     0x15 => self.op_fx15_loaddt(x),
 
-                    // Fx18 - LD ST, Vx
+                    // Fx18 load st ST = Vx
                     0x18 => unimplemented("fx18 ld st = vx"),
 
                     // fx1e addi I += Vx
@@ -186,11 +186,11 @@ impl CPU {
                     // fx33 bcd M[I..I+2] = bcd(Vx)
                     0x33 => self.op_fx33_bcd(x),
 
-                    // Fx55 - LD [I], Vx
-                    0x55 => unimplemented("Fx55 - LD [I], Vx"),
+                    // fx55 storeg M[I..I+x] = [V0..Vx], I += x + 1
+                    0x55 => self.op_fx55_storeg(x),
 
-                    // Fx65 - LD Vx, [I]
-                    0x65 => unimplemented("Fx65 - LD Vx, [I]"),
+                    // fx65 ldreg [V0..Vx] = M[I..I+x], I += x + 1
+                    0x65 =>self.op_fx65_ldreg(x),
 
                     _ => unknown_opcode(high, low)
                 }
@@ -447,6 +447,46 @@ impl CPU {
         vx = vx / 10;
 
         self.memory[ir] = vx; // vx is u8, so no need to modulo here
+
+        ExecutionStatus::OK
+    }
+
+    // fx55 storeg M[I..I+x] = [V0..Vx], I += x + 1
+    fn op_fx55_storeg(&mut self, x: usize) -> ExecutionStatus {
+        let ir = self.ir;
+
+        if x > 15 || ir + x >= MEM_SIZE {
+            return runtime_error("Invalid memory access");
+        }
+
+        unsafe {
+            let src = self.register.as_ptr();
+            let dest = self.memory.as_mut_ptr().offset(ir as isize);
+
+            std::ptr::copy(src, dest, x + 1);
+        }
+
+        self.ir += x + 1;
+
+        ExecutionStatus::OK
+    }
+
+    // fx65 ldreg [V0..Vx] = M[I..I+x], I += x + 1
+    fn op_fx65_ldreg(&mut self, x: usize) -> ExecutionStatus {
+        let ir = self.ir;
+
+        if x > 15 || ir + x >= MEM_SIZE {
+            return runtime_error("Invalid memory access");
+        }
+
+        unsafe {
+            let src = self.memory.as_ptr().offset(ir as isize);
+            let dest = self.register.as_mut_ptr();
+
+            std::ptr::copy(src, dest, x + 1);
+        }
+
+        self.ir += x + 1;
 
         ExecutionStatus::OK
     }
