@@ -1,6 +1,7 @@
 use wasm_bindgen::prelude::*;
 use crate::memory::{PROGRAM_START, MEM_SIZE, Memory, allocate_memory};
 use crate::utils;
+use crate::iodevice::{IOInterface, DISPLAY_WIDTH, DISPLAY_HEIGHT};
 
 const STACK_SIZE : usize = 64;
 const REGISTER_SIZE : usize = 16;
@@ -54,7 +55,13 @@ impl CPU {
         }
     }
 
-    pub fn tick(&mut self) -> ExecutionStatus {
+    pub fn update_timer(&mut self) {
+        if self.dt > 0 {
+            self.dt -= 1;
+        }
+    }
+
+    pub fn tick(&mut self, device: &mut dyn IOInterface) -> ExecutionStatus {
         // fetch
         if self.pc > MEM_SIZE - 2 {
             return ExecutionStatus::Halt;
@@ -148,8 +155,9 @@ impl CPU {
             // cxkk rand Vx = rand() & byte
             0xC => self.op_cxkk_rand(high, low),
 
-            // TODO: dxyn - draw Vx, Vy, nibble
-            0xD => unimplemented("dxyn draw"),
+            // TODO: test?
+            // dxyn - draw Vx, Vy, nibble
+            0xD => self.op_dxyn_draw(high, low, device),
 
             // TODO: skip if key instructions
             0xE => {
@@ -414,6 +422,69 @@ impl CPU {
 
         ExecutionStatus::OK
     }
+
+    // dxyn draw vx, vy, n
+    fn op_dxyn_draw(&mut self, high: u8, low: u8, device: &mut dyn IOInterface) -> ExecutionStatus {
+        let vx = get2(high, low) as usize;
+        let vy = get3(high, low) as usize;
+        let x_start = self.register[vx];
+        let y_start = self.register[vy];
+
+        let mut vf = 0;
+
+        let n = get4(high, low);
+
+
+        for dy in 0..n {
+            let row = self.memory[self.ir + dy as usize];
+            let mut mask = 0x80;
+
+            for dx in 0..8 {
+                let x = x_start + dx;
+                let y = y_start + dy;
+
+                if row & mask != 0 {
+                    // draw
+                    // update vf check erased: pixel is 1 and result is 0
+                }
+
+                mask >>= 1;
+            }
+        }
+
+        self.register[0xF] = vf;
+
+        ExecutionStatus::OK
+    }
+
+    // static inline void instr_Dxyn(){
+    //     // draw sprite
+
+    //     int x1 = reg[get2()], y1 = reg[get3()], n = get4(), vf = 0, mask;
+    //     int x, y;
+
+    //     x1 = x1 % 64; y1 = y1 % 32;
+
+    //     byte row, px, pold;
+    //     for (int dy = 0; dy < n; ++dy){
+    //         row = mem[reg_i + dy];
+    //         mask = 0x80;
+    //         for (int dx = 0; dx < 8; ++dx){
+    //             x = x1 + dx; y = y1 + dy;
+    //             if ((x < 0) || (y < 0) || (x > 63) || (y > 31)) continue;
+
+    //             px = (row & mask) ? 1 : 0; mask >>=1; // translate to display pixel for each bit
+    //             display[x][y] ^= px; // xor the sprite to current screen
+
+    //             vf |= px && !display[x][y]; // check erased: pixel is 1 and result is 0
+    //         }
+    //     }
+
+    //     reg[0xF] = vf ? 1 : 0;
+
+    //     need_redraw = 1;
+    // }
+
 
     // fx07 readdt Vx = DT
     fn op_fx07_readdt(&mut self, x: usize) -> ExecutionStatus {

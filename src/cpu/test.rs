@@ -4,6 +4,7 @@
 
 use wasm_bindgen_test::*;
 use super::*;
+use crate::iodevice::IOInterface;
 
 // TEST UTILS
 
@@ -38,13 +39,24 @@ fn test_get_program_memory() {
 
 // TEST CPU INSTRUCTIONS
 
+struct MockDevice {}
+
+impl IOInterface for MockDevice {
+    fn clear_display(&mut self) {}
+
+    fn draw_pixel(&mut self, x: u8, y: u8) -> u8 {
+        0
+    }
+}
+
 struct CPUTester {
-    cpu: CPU
+    cpu: CPU,
+    device: MockDevice,
 }
 
 impl CPUTester {
     pub fn new() -> CPUTester {
-        CPUTester { cpu: CPU::new() }
+        CPUTester { cpu: CPU::new(), device: MockDevice{} }
     }
 
     fn reset(&mut self) {
@@ -58,7 +70,7 @@ impl CPUTester {
     }
 
     fn tick_cpu(&mut self) -> ExecutionStatus {
-        self.cpu.tick()
+        self.cpu.tick(&mut self.device)
     }
 }
 
