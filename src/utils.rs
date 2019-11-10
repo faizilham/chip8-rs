@@ -12,6 +12,7 @@ macro_rules! log {
     ($( $t:tt )*) => {};
 }
 
+#[allow(unused_macros)]
 #[cfg(any(test, debug))]
 macro_rules! debug {
     ($( $t:tt )*) => {
@@ -19,6 +20,7 @@ macro_rules! debug {
     };
 }
 
+#[allow(unused_macros)]
 #[cfg(not(any(test, debug)))]
 macro_rules! debug {
     ($( $t:tt )*) => {};

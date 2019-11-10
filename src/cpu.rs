@@ -323,13 +323,13 @@ pub enum ExecutionStatus {
     RuntimeError,
 }
 
-fn runtime_error(s : &str) -> ExecutionStatus {
-    log!("Runtime Error: {}", s);
+fn runtime_error(_s : &str) -> ExecutionStatus {
+    log!("Runtime Error: {}", _s);
     ExecutionStatus::RuntimeError
 }
 
-fn unimplemented(s: &str) -> ExecutionStatus {
-    log!("Unimplemented Error: {}", s);
+fn unimplemented(_s: &str) -> ExecutionStatus {
+    log!("Unimplemented Error: {}", _s);
     ExecutionStatus::RuntimeError
 }
 
