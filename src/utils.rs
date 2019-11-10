@@ -27,18 +27,10 @@ macro_rules! log {
 }
 
 #[allow(unused_macros)]
-#[cfg(any(test, debug))]
 macro_rules! debug {
     ($( $t:tt )*) => {
         web_sys::console::log_1(&format!( $( $t )* ).into());
     };
-}
-
-// disable debug outside of test or development
-#[allow(unused_macros)]
-#[cfg(not(any(test, debug)))]
-macro_rules! debug {
-    ($( $t:tt )*) => {};
 }
 
 #[cfg(not(test))]

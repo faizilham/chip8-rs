@@ -64,12 +64,15 @@ impl CPU {
     pub fn tick(&mut self, device: &mut dyn IOInterface) -> ExecutionStatus {
         // fetch
         if self.pc > MEM_SIZE - 2 {
+            log!("Reaching end of rom");
             return ExecutionStatus::Halt;
         }
 
         let high = self.memory[self.pc];
         let low = self.memory[self.pc + 1];
         self.pc += 2;
+
+        // debug!("cpu tick {:x} {:x}", high, low);
 
         // parse
         let result = match get1(high, low) {

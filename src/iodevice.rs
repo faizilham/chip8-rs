@@ -12,11 +12,11 @@ pub trait IOInterface {
 #[wasm_bindgen]
 #[derive(Clone, Copy)]
 pub struct DisplayUpdate {
-    display_ptr: *const u8,
-    updated_ptr: *const bool,
-    buffer_size: usize,
-    display_updated: bool,
-    display_cleared: bool,
+    pub display_ptr: *const u8,
+    pub updated_ptr: *const bool,
+    pub buffer_size: usize,
+    pub display_updated: bool,
+    pub display_cleared: bool,
 }
 
 pub struct IODevice {
@@ -84,7 +84,10 @@ impl IOInterface for IODevice {
 
         let color = self.display_buffer[i] ^ 1;
         self.display_buffer[i] = color;
+        self.updated[i] = true;
         self.display_updated = true;
+
+        // debug!("draw {} {}", x, y);
 
         !color & 1
     }
