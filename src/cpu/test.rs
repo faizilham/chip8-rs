@@ -810,3 +810,156 @@ fn test_op_fx15_loaddt() {
     assert_eq!(result, ExecutionStatus::OK);
     assert_eq!(tester.cpu.dt, val);
 }
+
+#[wasm_bindgen_test]
+fn test_op_fx1e_addi() {
+    let mut tester = CPUTester::new();
+
+    let i_val: usize = 0x235;
+
+    // reg 0 case
+    let val: usize = 0x56;
+    tester.set_ops(0xf0, 0x1e);
+    tester.cpu.ir = i_val;
+    tester.cpu.register[0] = val as u8;
+
+    let result = tester.tick_cpu();
+
+    assert_eq!(result, ExecutionStatus::OK);
+    assert_eq!(tester.cpu.ir, i_val + val);
+
+    // reg 3 case
+    let val: usize = 0xFF;
+    tester.set_ops(0xf3, 0x1e);
+    tester.cpu.ir = i_val;
+    tester.cpu.register[3] = val as u8;
+
+    let result = tester.tick_cpu();
+
+    assert_eq!(result, ExecutionStatus::OK);
+    assert_eq!(tester.cpu.ir, i_val + val);
+}
+
+#[wasm_bindgen_test]
+fn test_op_fx29_digit() {
+    let mut tester = CPUTester::new();
+
+    // reg 0 case
+    let val: usize = 0x0A;
+    tester.set_ops(0xf0, 0x29);
+    tester.cpu.register[0] = val as u8;
+
+    let result = tester.tick_cpu();
+
+    assert_eq!(result, ExecutionStatus::OK);
+    assert_eq!(tester.cpu.ir, 5 * val);
+
+    // reg 3 case
+    let val: usize = 0x09;
+    tester.set_ops(0xf3, 0x29);
+    tester.cpu.register[3] = val as u8;
+
+    let result = tester.tick_cpu();
+
+    assert_eq!(result, ExecutionStatus::OK);
+    assert_eq!(tester.cpu.ir, 5 * val);
+}
+
+
+#[wasm_bindgen_test]
+fn test_op_fx33_bcd() {
+    let mut tester = CPUTester::new();
+
+    let ir = 0x500;
+
+    // case full
+    let val = 123;
+    let bcd = [1, 2, 3];
+
+    tester.set_ops(0xf0, 0x33);
+    tester.cpu.register[0] = val;
+    tester.cpu.ir = ir;
+
+    let result = tester.tick_cpu();
+
+    assert_eq!(result, ExecutionStatus::OK);
+    for i in 0..3 {
+        assert_eq!(tester.cpu.memory[ir + i], bcd[i]);
+    }
+
+    // no hundreds
+    let val = 23;
+    let bcd = [0, 2, 3];
+
+    tester.set_ops(0xf0, 0x33);
+    tester.cpu.register[0] = val;
+    tester.cpu.ir = ir;
+
+    let result = tester.tick_cpu();
+
+    assert_eq!(result, ExecutionStatus::OK);
+    for i in 0..3 {
+        assert_eq!(tester.cpu.memory[ir + i], bcd[i]);
+    }
+
+    // only last digit
+    let val = 3;
+    let bcd = [0, 0, 3];
+
+    tester.set_ops(0xf0, 0x33);
+    tester.cpu.register[0] = val;
+    tester.cpu.ir = ir;
+
+    let result = tester.tick_cpu();
+
+    assert_eq!(result, ExecutionStatus::OK);
+    for i in 0..3 {
+        assert_eq!(tester.cpu.memory[ir + i], bcd[i]);
+    }
+
+    // middle empty
+    let val = 103;
+    let bcd = [1, 0, 3];
+
+    tester.set_ops(0xf0, 0x33);
+    tester.cpu.register[0] = val;
+    tester.cpu.ir = ir;
+
+    let result = tester.tick_cpu();
+
+    assert_eq!(result, ExecutionStatus::OK);
+    for i in 0..3 {
+        assert_eq!(tester.cpu.memory[ir + i], bcd[i]);
+    }
+
+    // from reg 3
+    let val = 120;
+    let bcd = [1, 2, 0];
+
+    tester.set_ops(0xf3, 0x33);
+    tester.cpu.register[3] = val;
+    tester.cpu.ir = ir;
+
+    let result = tester.tick_cpu();
+
+    assert_eq!(result, ExecutionStatus::OK);
+    for i in 0..3 {
+        assert_eq!(tester.cpu.memory[ir + i], bcd[i]);
+    }
+
+    // different ir
+    let ir = 0x300;
+    let val = 125;
+    let bcd = [1, 2, 5];
+
+    tester.set_ops(0xf0, 0x33);
+    tester.cpu.register[0] = val;
+    tester.cpu.ir = ir;
+
+    let result = tester.tick_cpu();
+
+    assert_eq!(result, ExecutionStatus::OK);
+    for i in 0..3 {
+        assert_eq!(tester.cpu.memory[ir + i], bcd[i]);
+    }
+}

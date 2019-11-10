@@ -177,14 +177,14 @@ impl CPU {
                     // Fx18 - LD ST, Vx
                     0x18 => unimplemented("fx18 ld st = vx"),
 
-                    // Fx1E - ADD I += Vx
-                    0x1E => unimplemented("fx1e addi i += vx"),
+                    // fx1e addi I += Vx
+                    0x1E => self.op_fx1e_addi(x),
 
-                    // Fx29 - LD F, Vx
-                    0x29 => unimplemented("fx29 LD F, Vx"),
+                    // fx29 digit I = 5 * Vx
+                    0x29 => self.op_fx29_digit(x),
 
-                    // Fx33 - LD B, Vx
-                    0x33 => unimplemented("Fx33 - LD B, Vx"),
+                    // fx33 bcd M[I..I+2] = bcd(Vx)
+                    0x33 => self.op_fx33_bcd(x),
 
                     // Fx55 - LD [I], Vx
                     0x55 => unimplemented("Fx55 - LD [I], Vx"),
@@ -420,6 +420,34 @@ impl CPU {
     // fx15 loaddt DT = Vx
     fn op_fx15_loaddt(&mut self, x: usize) -> ExecutionStatus {
         self.dt = self.register[x];
+        ExecutionStatus::OK
+    }
+
+    // fx1e addi I += Vx
+    fn op_fx1e_addi(&mut self, x: usize) -> ExecutionStatus {
+        self.ir += self.register[x] as usize;
+        ExecutionStatus::OK
+    }
+
+    // fx29 digit I = 5 * Vx
+    fn op_fx29_digit(&mut self, x: usize) -> ExecutionStatus {
+        self.ir = 5 * (self.register[x] as usize);
+        ExecutionStatus::OK
+    }
+
+    // fx33 bcd M[I..I+2] = bcd(Vx)
+    fn op_fx33_bcd(&mut self, x: usize) -> ExecutionStatus {
+        let ir = self.ir;
+        let mut vx = self.register[x];
+
+        self.memory[ir + 2] = vx % 10;
+        vx = vx / 10;
+
+        self.memory[ir + 1] = vx % 10;
+        vx = vx / 10;
+
+        self.memory[ir] = vx; // vx is u8, so no need to modulo here
+
         ExecutionStatus::OK
     }
 }
