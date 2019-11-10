@@ -3,7 +3,7 @@
  */
 
 use wasm_bindgen_test::*;
-use crate::cpu::*;
+use super::*;
 
 // TEST UTILS
 
@@ -707,4 +707,59 @@ fn test_op_9xy0_skipnev() {
 
     assert_eq!(result, ExecutionStatus::OK);
     assert_eq!(tester.cpu.pc, pc);
+}
+
+#[wasm_bindgen_test]
+fn test_op_annn_loadi() {
+    let mut tester = CPUTester::new();
+
+    let val = 0x356;
+
+    tester.set_ops(0xa3, 0x56);
+
+    let result = tester.tick_cpu();
+
+    assert_eq!(result, ExecutionStatus::OK);
+    assert_eq!(tester.cpu.ir, val);
+}
+
+#[wasm_bindgen_test]
+fn test_op_bnnn_jumpv() {
+    let mut tester = CPUTester::new();
+
+    let addr = 0x456;
+
+    // success case
+    tester.set_ops(0xb4, 0x56);
+
+    let result = tester.tick_cpu();
+
+    assert_eq!(result, ExecutionStatus::OK);
+    assert_eq!(tester.cpu.pc, addr);
+}
+
+
+#[wasm_bindgen_test]
+fn test_op_cxkk_load() {
+    let mock_random_value = utils::random();
+    let mut tester = CPUTester::new();
+
+
+    // reg 0 case
+    let val = mock_random_value & 0x56;
+    tester.set_ops(0xC0, 0x56);
+
+    let result = tester.tick_cpu();
+
+    assert_eq!(result, ExecutionStatus::OK);
+    assert_eq!(tester.cpu.register[0], val);
+
+    // reg 3 case
+    let val = mock_random_value & 0x4A;
+    tester.set_ops(0xC3, 0x4A);
+
+    let result = tester.tick_cpu();
+
+    assert_eq!(result, ExecutionStatus::OK);
+    assert_eq!(tester.cpu.register[3], val);
 }

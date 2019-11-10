@@ -1,9 +1,6 @@
 use wasm_bindgen::prelude::*;
 use crate::memory::{PROGRAM_START, Memory, allocate_memory};
-
-// UNIT TESTS
-#[cfg(test)]
-mod test;
+use crate::utils;
 
 const STACK_SIZE : usize = 64;
 const REGISTER_SIZE : usize = 16;
@@ -66,7 +63,7 @@ impl CPU {
         // parse
         let result = match get1(high, low) {
             0x0 => match low {
-                // 00e0 clear display
+                // TODO: 00e0 clear display
                 0xE0 => unimplemented("clear display"),
 
                 // 00ee return
@@ -137,6 +134,18 @@ impl CPU {
 
             // 9xy0 skip ne v Vx != Vy
             0x9 => self.op_9xy0_skipnev(high, low),
+
+            // annn loadi I = annn
+            0xA => self.op_annn_loadi(high, low),
+
+            // bnnn jumpv v0 + nnn
+            0xB => self.op_bnnn_jumpv(high, low),
+
+            // cxkk rand Vx = rand() & byte
+            0xC => self.op_cxkk_rand(high, low),
+
+            // TODO: dxyn - draw Vx, Vy, nibble
+            0xD => unimplemented("dxyn draw"),
 
             _ => {
                 runtime_error("Unknown opcode")
@@ -326,6 +335,32 @@ impl CPU {
 
         ExecutionStatus::OK
     }
+
+    // annn loadi I = annn
+    fn op_annn_loadi(&mut self, high: u8, low: u8) -> ExecutionStatus {
+        self.ir = get_nnn(high, low) as usize;
+
+        ExecutionStatus::OK
+    }
+
+    // bnnn jumpv v0 + nnn
+    fn op_bnnn_jumpv(&mut self, high: u8, low: u8) -> ExecutionStatus {
+        let addr = self.register[0] as usize + get_nnn(high, low) as usize;
+
+        self.pc = addr;
+
+        ExecutionStatus::OK
+    }
+
+    // cxkk rand Vx = rand() & byte
+    fn op_cxkk_rand(&mut self, high: u8, low: u8) -> ExecutionStatus {
+        let x = get2(high, low) as usize;
+        let kk = get_kk(high, low);
+
+        self.register[x] = utils::random() & kk;
+
+        ExecutionStatus::OK
+    }
 }
 
 // UTILITIES
@@ -380,3 +415,7 @@ fn get_nnn(high: u8, low: u8) -> u16 {
 
     (front << 8) | back
 }
+
+// UNIT TEST MODULE
+#[cfg(test)]
+mod test;
