@@ -35,6 +35,10 @@ impl Machine {
         }
     }
 
+    pub fn reset(&mut self) {
+        self.cpu.reset();
+    }
+
     pub fn update_cpu(&mut self) -> ExecutionStatus {
         for _ in 0..CPU_TICK_PER_FRAME {
             let status = self.cpu.tick();

@@ -56,18 +56,22 @@ impl CPU {
 
     pub fn tick(&mut self) -> ExecutionStatus {
         // fetch
+        if self.pc > MEM_SIZE - 2 {
+            return ExecutionStatus::Halt;
+        }
+
         let high = self.memory[self.pc];
         let low = self.memory[self.pc + 1];
         self.pc += 2;
 
         // parse
         let result = match get1(high, low) {
-            0x0 => match low {
+            0x0 => match (high, low) {
                 // TODO: 00e0 clear display
-                0xE0 => unimplemented("clear display"),
+                (0, 0xE0) => unimplemented("clear display"),
 
                 // 00ee return
-                0xEE => self.op_00ee_ret(),
+                (0, 0xEE) => self.op_00ee_ret(),
 
                 // -- 0nnn syscall, ignored
                 _ => ExecutionStatus::OK
@@ -513,8 +517,8 @@ fn unknown_opcode(_high: u8, _low: u8) -> ExecutionStatus {
 }
 
 fn unimplemented(_s: &str) -> ExecutionStatus {
-    log!("Unimplemented Error: {}", _s);
-    ExecutionStatus::RuntimeError
+    log!("Unimplemented: {}", _s);
+    ExecutionStatus::OK
 }
 
 #[inline]

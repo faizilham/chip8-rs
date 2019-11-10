@@ -8,10 +8,19 @@ function loadROM(machine) {
   const rom = new Uint8Array(memory.buffer, machine.get_rom_ptr(), machine.max_rom_size());
 
   const program = [
-    0x01, 0x2a,
-    0x0f, 0x3c,
-    0x12, 0x00,
+    0x60, 0x05,
+    0x00, 0xe0,
+    0x70, 0xff,
+    0x30, 0x00,
+    0x12, 0x02,
+    0xd0, 0x00
   ];
+
+  /// add trap jump halt at the end
+  let last = program.length;
+  program.push(0x12);
+  program.push(last);
+
 
   for (let i = 0; i < program.length; i++) {
     rom[i] = program[i];
@@ -24,12 +33,17 @@ function loop() {
   let result = machine.update_cpu();
 
   if (result == ExecutionStatus.OK) {
-    requestAnimationFrame(loop)
+    requestAnimationFrame(loop);
   }
 }
 
+function start() {
+  machine.reset();
+  requestAnimationFrame(loop);
+}
+
 const startbtn = document.getElementById("startbtn");
-startbtn.onclick = () => requestAnimationFrame(loop);
+startbtn.onclick = start;
 
 const machine = Machine.new();
 loadROM(machine)
