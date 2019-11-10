@@ -87,8 +87,6 @@ impl IOInterface for IODevice {
         self.updated[i] = true;
         self.display_updated = true;
 
-        // debug!("draw {} {}", x, y);
-
         !color & 1
     }
 }

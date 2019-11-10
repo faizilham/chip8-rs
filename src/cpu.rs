@@ -72,8 +72,6 @@ impl CPU {
         let low = self.memory[self.pc + 1];
         self.pc += 2;
 
-        // debug!("cpu tick {:x} {:x}", high, low);
-
         // parse
         let result = match get1(high, low) {
             0x0 => match (high, low) {

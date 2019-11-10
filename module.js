@@ -10,15 +10,19 @@ const canvas = document.getElementById("display");
 
 const machine = Machine.new();
 const display = new Display(canvas);
-
+let halted = true;
+let playing = false;
+let animationId = null;
 
 function loop() {
+  animationId = null;
+
   let result = machine.update();
 
   // update display
   let updates = machine.get_display_update();
 
-  console.log("cls:", updates.display_cleared, "updated:", updates.display_updated);
+  // console.log("cls:", updates.display_cleared, "updated:", updates.display_updated);
 
   if (updates.display_cleared) {
     display.clearCanvas();
@@ -27,19 +31,61 @@ function loop() {
   display.draw(updates.display_ptr, updates.updated_ptr, updates.buffer_size);
 
   if (result == ExecutionStatus.OK) {
-    requestAnimationFrame(loop);
+    animationId = requestAnimationFrame(loop);
+  } else {
+    halt();
+  }
+}
+
+const startpause = document.getElementById("startpause");
+
+startpause.onclick = () => {
+  if (!playing) {
+    start();
+  } else {
+    pause();
   }
 }
 
 function start() {
-  display.clearCanvas();
-  machine.reset();
-  requestAnimationFrame(loop);
+  if (playing) return;
+
+  if (halted) {
+    display.clearCanvas();
+    machine.reset();
+  }
+
+  playing = true;
+  halted = false;
+
+  animationId = requestAnimationFrame(loop);
+  startpause.textContent = "Pause";
 }
 
+function pause() {
+  if (!playing) return;
+  playing = false;
 
-const startbtn = document.getElementById("startbtn");
-startbtn.onclick = start;
+  if (animationId) {
+    cancelAnimationFrame(animationId);
+    animationId = null;
+  }
+
+  startpause.textContent = "Start";
+}
+
+function halt() {
+  halted = true;
+  playing = false;
+
+  if (animationId) {
+    cancelAnimationFrame(animationId);
+    animationId = null;
+  }
+
+  startpause.textContent = "Start";
+}
+
 
 const loadbtn = document.getElementById("loadbtn");
 const fileinput = document.getElementById("fileinput");
@@ -51,6 +97,8 @@ loadbtn.onclick = () => {
 
   loadROM(machine, file)
     .then(() => {
+      halt();
+      display.clearCanvas();
       console.log("ROM Loaded");
     })
     .catch((err) =>{

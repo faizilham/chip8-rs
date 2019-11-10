@@ -30,10 +30,10 @@ export class Display {
     const changed = new Uint8Array(memory.buffer, changedPtr, size);
 
     let i;
-    // this.context.beginPath();
+    this.context.beginPath();
 
     // draw on
-    this.context.fillStyle = self.onColor;
+    this.context.fillStyle = this.onColor;
 
     i = 0;
     for (let row = 0; row < this.rows; row++) {
@@ -45,15 +45,17 @@ export class Display {
           continue;
         }
 
-        console.log("on", col, row, pixels[idx], changed[idx]);
-
-
-        this.drawPixel(col, row);
+        this.context.fillRect(
+          col * this.pixelSize,
+          row * this.pixelSize,
+          this.pixelSize,
+          this.pixelSize
+        );
       }
     }
 
     // draw off
-    this.context.fillStyle = self.offColor;
+    this.context.fillStyle = this.offColor;
     i = 0;
     for (let row = 0; row < this.rows; row++) {
       for (let col = 0; col < this.cols; col++) {
@@ -64,22 +66,17 @@ export class Display {
           continue;
         }
 
-        console.log("off", col, row, pixels[idx], changed[idx]);
-        // console.log("off", col, row);
-
-        this.drawPixel(col, row);
-
-        // this.context.fillRect(
-        //   col * this.pixelSize,
-        //   row * this.pixelSize,
-        //   this.pixelSize,
-        //   this.pixelSize
-        // );
+        this.context.fillRect(
+          col * this.pixelSize,
+          row * this.pixelSize,
+          this.pixelSize,
+          this.pixelSize
+        );
       }
     }
 
-    // this.context.closePath();
-    // this.context.stroke();
+    this.context.closePath();
+    this.context.stroke();
   }
 
   drawPixel(col, row) {
@@ -93,16 +90,7 @@ export class Display {
   }
 
   clearCanvas() {
-    console.log("cls");
-    // this.context.beginPath();
-
-
-    // this.drawPixel(1, 1);
-    // this.drawPixel(2, 2);
-    // this.drawPixel(46, 23);
-
-    // this.context.fillStyle = this.onColor;
-    // this.drawPixel(-10, 0);
+    this.context.beginPath();
 
     this.context.fillStyle = this.offColor;
     this.context.fillRect(
@@ -112,10 +100,7 @@ export class Display {
       this.canvasHeight
     );
 
-    this.context.fillStyle = this.onColor;
-    this.drawPixel(-1, -1);
-
-    // this.context.closePath();
-    // this.context.stroke();
+    this.context.closePath();
+    this.context.stroke();
   }
 }
