@@ -165,22 +165,30 @@ impl CPU {
                 let x = get2(high, low) as usize;
 
                 match low {
-                    // Fx07 - LD Vx = DT
-                    0x07 => unimplemented("fx07 ld vx = dt"),
+                    // fx07 readdt Vx = DT
+                    0x07 => self.op_fx07_readdt(x),
+
                     // Fx0A waitkey LD Vx, K
                     0x0A => unimplemented("fx0a ld vx key"),
-                    // Fx15 - LD DT, Vx
-                    0x15 => unimplemented("fx15 ld dt = vx"),
+
+                    // fx15 loaddt DT = Vx
+                    0x15 => self.op_fx15_loaddt(x),
+
                     // Fx18 - LD ST, Vx
                     0x18 => unimplemented("fx18 ld st = vx"),
+
                     // Fx1E - ADD I += Vx
                     0x1E => unimplemented("fx1e addi i += vx"),
+
                     // Fx29 - LD F, Vx
                     0x29 => unimplemented("fx29 LD F, Vx"),
+
                     // Fx33 - LD B, Vx
                     0x33 => unimplemented("Fx33 - LD B, Vx"),
+
                     // Fx55 - LD [I], Vx
                     0x55 => unimplemented("Fx55 - LD [I], Vx"),
+
                     // Fx65 - LD Vx, [I]
                     0x65 => unimplemented("Fx65 - LD Vx, [I]"),
 
@@ -403,7 +411,17 @@ impl CPU {
         ExecutionStatus::OK
     }
 
-    //
+    // fx07 readdt Vx = DT
+    fn op_fx07_readdt(&mut self, x: usize) -> ExecutionStatus {
+        self.register[x] = self.dt;
+        ExecutionStatus::OK
+    }
+
+    // fx15 loaddt DT = Vx
+    fn op_fx15_loaddt(&mut self, x: usize) -> ExecutionStatus {
+        self.dt = self.register[x];
+        ExecutionStatus::OK
+    }
 }
 
 // UTILITIES

@@ -744,7 +744,6 @@ fn test_op_cxkk_load() {
     let mock_random_value = utils::random();
     let mut tester = CPUTester::new();
 
-
     // reg 0 case
     let val = mock_random_value & 0x56;
     tester.set_ops(0xC0, 0x56);
@@ -762,4 +761,52 @@ fn test_op_cxkk_load() {
 
     assert_eq!(result, ExecutionStatus::OK);
     assert_eq!(tester.cpu.register[3], val);
+}
+
+#[wasm_bindgen_test]
+fn test_op_fx07_readdt() {
+    let mut tester = CPUTester::new();
+    let val = 0x23;
+
+    // reg 0 case
+    tester.set_ops(0xF0, 0x07);
+    tester.cpu.dt = val;
+
+    let result = tester.tick_cpu();
+
+    assert_eq!(result, ExecutionStatus::OK);
+    assert_eq!(tester.cpu.register[0], val);
+
+    // reg 3 case
+    tester.set_ops(0xF3, 0x07);
+    tester.cpu.dt = val;
+
+    let result = tester.tick_cpu();
+
+    assert_eq!(result, ExecutionStatus::OK);
+    assert_eq!(tester.cpu.register[3], val);
+}
+
+#[wasm_bindgen_test]
+fn test_op_fx15_loaddt() {
+    let mut tester = CPUTester::new();
+    let val = 0x23;
+
+    // reg 0 case
+    tester.set_ops(0xF0, 0x15);
+    tester.cpu.register[0] = val;
+
+    let result = tester.tick_cpu();
+
+    assert_eq!(result, ExecutionStatus::OK);
+    assert_eq!(tester.cpu.dt, val);
+
+    // reg 3 case
+    tester.set_ops(0xF3, 0x15);
+    tester.cpu.register[3] = val;
+
+    let result = tester.tick_cpu();
+
+    assert_eq!(result, ExecutionStatus::OK);
+    assert_eq!(tester.cpu.dt, val);
 }
