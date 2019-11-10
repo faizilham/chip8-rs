@@ -74,8 +74,9 @@ impl CPU {
         // parse
         let result = match get1(high, low) {
             0x0 => match (high, low) {
-                // TODO: 00e0 clear display
-                (0, 0xE0) => unimplemented("clear display"),
+                // TODO: test?
+                // 00e0 clear display
+                (0, 0xE0) => self.op_00e0_cls(device),
 
                 // 00ee return
                 (0, 0xEE) => self.op_00ee_ret(),
@@ -217,6 +218,13 @@ impl CPU {
     }
 
     // OPCODES
+
+    // 00E0 clear screen
+    fn op_00e0_cls(&mut self, device: &mut dyn IOInterface) -> ExecutionStatus {
+        device.clear_display();
+
+        ExecutionStatus::OK
+    }
 
     // 00EE return
     fn op_00ee_ret(&mut self) -> ExecutionStatus {
@@ -440,12 +448,12 @@ impl CPU {
             let mut mask = 0x80;
 
             for dx in 0..8 {
-                let x = x_start + dx;
-                let y = y_start + dy;
-
                 if row & mask != 0 {
                     // draw
-                    // update vf check erased: pixel is 1 and result is 0
+                    let erased = device.draw_pixel(x_start + dx, y_start + dy);
+
+                    // update vf check erased
+                    vf |= erased;
                 }
 
                 mask >>= 1;
