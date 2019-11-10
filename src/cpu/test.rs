@@ -678,3 +678,33 @@ fn test_op_8xye_shl() {
     assert_eq!(tester.cpu.register[0], fin_val);
     assert_eq!(tester.cpu.register[0xF], expect_vf);
 }
+
+#[wasm_bindgen_test]
+fn test_op_9xy0_skipnev() {
+    let mut tester = CPUTester::new();
+
+    let val = 0xAF;
+
+    // skip case
+    tester.set_ops(0x90, 0x10);
+    tester.cpu.register[0] = val;
+    tester.cpu.register[2] = val;
+
+    let pc = tester.cpu.pc + 2;
+    let result = tester.tick_cpu();
+
+    assert_eq!(result, ExecutionStatus::OK);
+    assert_eq!(tester.cpu.pc, pc + 2);
+
+    // no skip case
+    tester.set_ops(0x90, 0x20);
+    tester.cpu.register[0] = val;
+    tester.cpu.register[2] = val;
+
+    let pc = tester.cpu.pc + 2;
+
+    let result = tester.tick_cpu();
+
+    assert_eq!(result, ExecutionStatus::OK);
+    assert_eq!(tester.cpu.pc, pc);
+}

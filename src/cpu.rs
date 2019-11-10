@@ -135,6 +135,9 @@ impl CPU {
                 }
             }
 
+            // 9xy0 skip ne v Vx != Vy
+            0x9 => self.op_9xy0_skipnev(high, low),
+
             _ => {
                 runtime_error("Unknown opcode")
             }
@@ -308,6 +311,18 @@ impl CPU {
     fn op_8xye_shl(&mut self, x: usize, _y: usize) -> ExecutionStatus {
         self.register[0xF] = (self.register[x] & 0x80) >> 7;
         self.register[x] <<= 1;
+
+        ExecutionStatus::OK
+    }
+
+    // 9xy0 skip ne v Vx != Vy
+    fn op_9xy0_skipnev(&mut self, high: u8, low: u8) -> ExecutionStatus {
+        let x = get2(high, low) as usize;
+        let y = get3(high, low) as usize;
+
+        if self.register[x] != self.register[y] {
+            self.pc += 2;
+        }
 
         ExecutionStatus::OK
     }
