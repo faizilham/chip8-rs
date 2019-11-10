@@ -128,7 +128,7 @@ impl CPU {
                     0xE => self.op_8xye_shl(x, y),
 
 
-                    _ => runtime_error("Unknown opcode")
+                    _ => unknown_opcode(high, low)
                 }
             }
 
@@ -147,8 +147,49 @@ impl CPU {
             // TODO: dxyn - draw Vx, Vy, nibble
             0xD => unimplemented("dxyn draw"),
 
+            // TODO: skip if key instructions
+            0xE => {
+                let x = get2(high, low) as usize;
+
+                match low {
+                    // Ex9E - SKP Vx
+                    0x9E => unimplemented("Ex9E skp vx"),
+                    // ExA1 - SKNP Vx
+                    0xA1 => unimplemented("ExA1 sknp vx"),
+                    _ => unknown_opcode(high, low)
+                }
+            },
+
+            // TODO: F instructions
+            0xF => {
+                let x = get2(high, low) as usize;
+
+                match low {
+                    // Fx07 - LD Vx = DT
+                    0x07 => unimplemented("fx07 ld vx = dt"),
+                    // Fx0A waitkey LD Vx, K
+                    0x0A => unimplemented("fx0a ld vx key"),
+                    // Fx15 - LD DT, Vx
+                    0x15 => unimplemented("fx15 ld dt = vx"),
+                    // Fx18 - LD ST, Vx
+                    0x18 => unimplemented("fx18 ld st = vx"),
+                    // Fx1E - ADD I += Vx
+                    0x1E => unimplemented("fx1e addi i += vx"),
+                    // Fx29 - LD F, Vx
+                    0x29 => unimplemented("fx29 LD F, Vx"),
+                    // Fx33 - LD B, Vx
+                    0x33 => unimplemented("Fx33 - LD B, Vx"),
+                    // Fx55 - LD [I], Vx
+                    0x55 => unimplemented("Fx55 - LD [I], Vx"),
+                    // Fx65 - LD Vx, [I]
+                    0x65 => unimplemented("Fx65 - LD Vx, [I]"),
+
+                    _ => unknown_opcode(high, low)
+                }
+            },
+
             _ => {
-                runtime_error("Unknown opcode")
+                unknown_opcode(high, low)
             }
         };
 
@@ -361,6 +402,8 @@ impl CPU {
 
         ExecutionStatus::OK
     }
+
+    //
 }
 
 // UTILITIES
@@ -375,6 +418,11 @@ pub enum ExecutionStatus {
 
 fn runtime_error(_s : &str) -> ExecutionStatus {
     log!("Runtime Error: {}", _s);
+    ExecutionStatus::RuntimeError
+}
+
+fn unknown_opcode(_high: u8, _low: u8) -> ExecutionStatus {
+    log!("Runtime Error: unknown opcode 0x{:02x}{:02x}", _high, _low);
     ExecutionStatus::RuntimeError
 }
 
