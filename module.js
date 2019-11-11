@@ -4,11 +4,12 @@ import { Machine, ExecutionStatus } from "./pkg";
 import { loadROM } from "./webplayer/rom_loader";
 import { Display } from "./webplayer/display";
 import { Keypad } from "./webplayer/keypad";
-import Beeper from "./webplayer/beeper";
+import { Beeper } from "./webplayer/beeper";
 
 const machine = Machine.new();
 const canvas = document.getElementById("display");
 const display = new Display(canvas);
+const beeper = new Beeper();
 const keypad = new Keypad();
 
 let halted = true;
@@ -18,7 +19,15 @@ let animationId = null;
 function loop() {
   animationId = null;
 
+  // update keys
+  let [pressed, released] = keypad.read_keys();
+  machine.set_keys(pressed, released);
+
+  // run machine
   let result = machine.update();
+
+  // update sound
+  beeper.setPlaying(machine.is_beeping());
 
   // update display
   let updates = machine.get_display_update();
@@ -29,10 +38,7 @@ function loop() {
 
   display.draw(updates.display_ptr, updates.updated_ptr, updates.buffer_size);
 
-  // update keys
-  let [pressed, released] = keypad.read_keys();
-  machine.set_keys(pressed, released);
-
+  // request next frame
   if (result == ExecutionStatus.OK) {
     animationId = requestAnimationFrame(loop);
   } else {
@@ -68,6 +74,7 @@ function start() {
 function pause() {
   if (!playing) return;
   playing = false;
+  beeper.stop();
 
   if (animationId) {
     cancelAnimationFrame(animationId);
@@ -80,6 +87,7 @@ function pause() {
 function halt() {
   halted = true;
   playing = false;
+  beeper.stop();
 
   if (animationId) {
     cancelAnimationFrame(animationId);

@@ -68,6 +68,10 @@ impl Machine {
     pub fn set_keys(&mut self, pressed_keys: u16, released_keys: u16) {
         self.device.set_keys(pressed_keys, released_keys);
     }
+
+    pub fn is_beeping(&self) -> bool {
+        self.cpu.beeping()
+    }
 }
 
 impl Machine {

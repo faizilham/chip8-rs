@@ -17,6 +17,7 @@ pub struct CPU {
     sp: usize,                  // stack pointer. 0 means empty,
 
     dt: u8,                     // delay timer
+    st: u8,                     // sound timer
 
     // MODES:
     incr_ir_after_reg: bool
@@ -36,6 +37,7 @@ impl CPU {
             stack,
             sp: 0,
             dt: 0,
+            st: 0,
 
             incr_ir_after_reg: false  // TODO: make this configurable through init and set methods
         }
@@ -54,6 +56,7 @@ impl CPU {
         self.pc = PROGRAM_START;
         self.sp = 0;
         self.dt = 0;
+        self.st = 0;
 
         for i in 0..REGISTER_SIZE {
             self.register[i] = 0;
@@ -64,6 +67,14 @@ impl CPU {
         if self.dt > 0 {
             self.dt -= 1;
         }
+
+        if self.st > 0 {
+            self.st -= 1;
+        }
+    }
+
+    pub fn beeping(&self) -> bool {
+        self.st > 0
     }
 
     pub fn tick(&mut self, device: &mut dyn IOInterface) -> ExecutionStatus {
@@ -179,7 +190,6 @@ impl CPU {
                 }
             },
 
-            // TODO: F instructions
             0xF => {
                 let x = get2(high, low) as usize;
 
@@ -194,8 +204,9 @@ impl CPU {
                     // fx15 loaddt DT = Vx
                     0x15 => self.op_fx15_loaddt(x),
 
+                    // TODO: test?
                     // Fx18 load st ST = Vx
-                    0x18 => unimplemented("fx18 ld st = vx"),
+                    0x18 => self.op_fx18_loadst(x),
 
                     // fx1e addi I += Vx
                     0x1E => self.op_fx1e_addi(x),
@@ -516,6 +527,12 @@ impl CPU {
     // fx15 loaddt DT = Vx
     fn op_fx15_loaddt(&mut self, x: usize) -> ExecutionStatus {
         self.dt = self.register[x];
+        ExecutionStatus::OK
+    }
+
+    // fx18 load st ST = Vx
+    fn op_fx18_loadst(&mut self, x: usize) -> ExecutionStatus {
+        self.st = self.register[x];
         ExecutionStatus::OK
     }
 
