@@ -115,11 +115,9 @@ loadbtn.onclick = () => {
     .then(() => {
       halt();
       display.clearCanvas();
-      console.log("ROM Loaded");
+      startpause.removeAttribute("disabled");
     })
     .catch((err) =>{
       console.error(err);
     })
 }
-
-// loadROM(machine)

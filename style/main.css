@@ -1,5 +1,5 @@
 .display {
   width: 640px;
   height: 320px;
-  /* background-color: black; */
+  border: 1px solid black;
 }

@@ -79,16 +79,6 @@ export class Display {
     this.context.stroke();
   }
 
-  drawPixel(col, row) {
-
-    this.context.fillRect(
-      col * this.pixelSize,
-      row * this.pixelSize,
-      this.pixelSize,
-      this.pixelSize
-    );
-  }
-
   clearCanvas() {
     this.context.beginPath();
 

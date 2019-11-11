@@ -3,8 +3,8 @@ import { memory } from "wasm-pkg/chip8_rs_bg"
 export class ROMLoader {
   constructor(machine) {
     this.buffer = null;
-    this.max_rom_size = machine.max_rom_size()
-    this.rom = new Uint8Array(memory.buffer, machine.get_rom_ptr(), this.max_rom_size);
+    this.max_rom_size = machine.max_rom_size();
+    this.machine = machine;
   }
 
   loadFile(file) {
@@ -39,9 +39,13 @@ export class ROMLoader {
       return false;
     }
 
+    const rom = new Uint8Array(memory.buffer, this.machine.get_rom_ptr(), this.max_rom_size);
+
     for (let i = 0; i < this.buffer.length; i++) {
-      this.rom[i] = this.buffer[i];
+      rom[i] = this.buffer[i];
     }
+
+    console.log("ROM Loaded");
 
     return true;
   }
