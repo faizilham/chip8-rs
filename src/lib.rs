@@ -19,9 +19,6 @@ const CPU_TICK_PER_FRAME : u8 = 9;
 pub struct Machine {
     cpu: cpu::CPU,
     device: iodevice::IODevice,
-    // init_rom(size) -> *rom
-    // update_cpu() -> exec_status
-    // set_keys(list of keys)
 }
 
 #[wasm_bindgen]
@@ -38,6 +35,8 @@ impl Machine {
         }
     }
 
+    /*** Runtime Related ***/
+
     pub fn reset(&mut self) {
         self.cpu.reset();
         self.device.reset();
@@ -52,6 +51,8 @@ impl Machine {
         status
     }
 
+    /*** Memory & Device Related ***/
+
     pub fn get_rom_ptr(&mut self) -> *mut u8 {
         self.cpu.rom_ptr()
     }
@@ -63,6 +64,10 @@ impl Machine {
     pub fn get_display_update(&self) -> iodevice::DisplayUpdate {
         self.device.get_display_update()
     }
+
+    pub fn set_keys(&mut self, pressed_keys: u16, released_keys: u16) {
+        self.device.set_keys(pressed_keys, released_keys);
+    }
 }
 
 impl Machine {
@@ -72,9 +77,20 @@ impl Machine {
         for _ in 0..CPU_TICK_PER_FRAME {
             status = self.cpu.tick(&mut self.device);
 
-            if status != ExecutionStatus::OK {
-                log!("machine halted");
-                break;
+            match status {
+                ExecutionStatus::OK => (), // continue,
+                ExecutionStatus::Halt => {
+                    log!("machine halted");
+                    break;
+                },
+                ExecutionStatus::RuntimeError => {
+                    log!("machine halted because of runtime error");
+                    break;
+                }
+                ExecutionStatus::WaitForKey => {
+                    status = ExecutionStatus::OK;
+                    break;
+                }
             }
         }
 

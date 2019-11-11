@@ -4,9 +4,17 @@ pub const DISPLAY_WIDTH : usize = 64;
 pub const DISPLAY_HEIGHT : usize = 32;
 pub const DISPLAY_SIZE : usize = DISPLAY_WIDTH * DISPLAY_HEIGHT;
 
+pub const NO_KEY : u8 = 0xFF;
+
 pub trait IOInterface {
     fn clear_display(&mut self);
     fn draw_pixel(&mut self, x: u8, y: u8) -> u8;
+
+    // key_pressed returns true if `key` is in pressed state
+    fn key_pressed(&self, key: u8) -> bool;
+
+    // read_any_key returns key code when a keypad is released. otherwise, it returns NO_KEY
+    fn read_any_key(&mut self) -> u8;
 }
 
 #[wasm_bindgen]
@@ -22,6 +30,10 @@ pub struct DisplayUpdate {
 pub struct IODevice {
     display_buffer: [u8; DISPLAY_SIZE],
     updated: [bool; DISPLAY_SIZE],
+
+    pressed_keys: u16,      // mapping u16 of which key is currently pressed
+    released_keys: u16,     // mapping u16 of which key has just been released
+
     display_cleared: bool,
     display_updated: bool,
 }
@@ -30,9 +42,12 @@ impl IODevice {
     pub fn new() -> IODevice {
         let display_buffer = [0; DISPLAY_SIZE];
         let updated = [false; DISPLAY_SIZE];
+
         IODevice {
             display_buffer,
             updated,
+            pressed_keys: 0,
+            released_keys: 0,
             display_cleared: false,
             display_updated: false,
         }
@@ -40,6 +55,8 @@ impl IODevice {
 
     pub fn reset(&mut self) {
         self.clear_display();
+        self.pressed_keys = 0;
+        self.released_keys = 0;
         self.display_cleared = false;
         self.display_updated = false;
     }
@@ -66,6 +83,11 @@ impl IODevice {
             display_updated: self.display_updated,
         }
     }
+
+    pub fn set_keys(&mut self, pressed_keys: u16, released_keys: u16) {
+        self.pressed_keys = pressed_keys;
+        self.released_keys = released_keys;
+    }
 }
 
 impl IOInterface for IODevice {
@@ -89,6 +111,28 @@ impl IOInterface for IODevice {
 
         !color & 1
     }
+
+    fn key_pressed(&self, key: u8) -> bool {
+        check_key(self.pressed_keys, key)
+    }
+
+    fn read_any_key(&mut self) -> u8 {
+
+        // check if any key is released
+        if self.released_keys == 0 {
+            return NO_KEY;
+        }
+
+        for key in 0..16 {
+            if check_key(self.released_keys, key) {
+                // clear released after read
+                self.released_keys = 0;
+                return key;
+            }
+        }
+
+        NO_KEY
+    }
 }
 
 #[inline]
@@ -96,6 +140,10 @@ fn to_index(x: usize, y: usize) -> usize {
     (y % DISPLAY_HEIGHT) * DISPLAY_WIDTH + (x % DISPLAY_WIDTH)
 }
 
+#[inline]
+fn check_key(keys: u16, key: u8) -> bool {
+    keys & (1 << key) > 0
+}
 
 #[cfg(test)]
 mod test {

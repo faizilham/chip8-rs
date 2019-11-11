@@ -1,7 +1,7 @@
 use wasm_bindgen::prelude::*;
 use crate::memory::{PROGRAM_START, MEM_SIZE, Memory, allocate_memory};
 use crate::utils;
-use crate::iodevice::{IOInterface, DISPLAY_WIDTH, DISPLAY_HEIGHT};
+use crate::iodevice::{IOInterface, NO_KEY};
 
 const STACK_SIZE : usize = 64;
 const REGISTER_SIZE : usize = 16;
@@ -161,15 +161,15 @@ impl CPU {
             // dxyn - draw Vx, Vy, nibble
             0xD => self.op_dxyn_draw(high, low, device),
 
-            // TODO: skip if key instructions
+            // TODO: test?
             0xE => {
                 let x = get2(high, low) as usize;
 
                 match low {
                     // Ex9E - SKP Vx
-                    0x9E => unimplemented("Ex9E skp vx"),
+                    0x9E => self.op_ex9e_skey(x, device),
                     // ExA1 - SKNP Vx
-                    0xA1 => unimplemented("ExA1 sknp vx"),
+                    0xA1 => self.op_exa1_snkey(x, device),
                     _ => unknown_opcode(high, low)
                 }
             },
@@ -182,8 +182,9 @@ impl CPU {
                     // fx07 readdt Vx = DT
                     0x07 => self.op_fx07_readdt(x),
 
-                    // Fx0A waitkey LD Vx, K
-                    0x0A => unimplemented("fx0a ld vx key"),
+                    // TODO: test?
+                    // fx0a waitkey LD Vx, K
+                    0x0A => self.op_fx0a_waitkey(x, device),
 
                     // fx15 loaddt DT = Vx
                     0x15 => self.op_fx15_loaddt(x),
@@ -466,39 +467,45 @@ impl CPU {
         ExecutionStatus::OK
     }
 
-    // static inline void instr_Dxyn(){
-    //     // draw sprite
+    // ex9e skey skip key pressed Vx
+    fn op_ex9e_skey(&mut self, x: usize, device: &mut dyn IOInterface) -> ExecutionStatus {
+        let key = self.register[x];
 
-    //     int x1 = reg[get2()], y1 = reg[get3()], n = get4(), vf = 0, mask;
-    //     int x, y;
+        if device.key_pressed(key) {
+            self.pc += 2;
+        }
 
-    //     x1 = x1 % 64; y1 = y1 % 32;
+        ExecutionStatus::OK
+    }
 
-    //     byte row, px, pold;
-    //     for (int dy = 0; dy < n; ++dy){
-    //         row = mem[reg_i + dy];
-    //         mask = 0x80;
-    //         for (int dx = 0; dx < 8; ++dx){
-    //             x = x1 + dx; y = y1 + dy;
-    //             if ((x < 0) || (y < 0) || (x > 63) || (y > 31)) continue;
+    // exa1 snkey skip key not pressed Vx
+    fn op_exa1_snkey(&mut self, x: usize, device: &mut dyn IOInterface) -> ExecutionStatus {
+        let key = self.register[x];
 
-    //             px = (row & mask) ? 1 : 0; mask >>=1; // translate to display pixel for each bit
-    //             display[x][y] ^= px; // xor the sprite to current screen
+        if !device.key_pressed(key) {
+            self.pc += 2;
+        }
 
-    //             vf |= px && !display[x][y]; // check erased: pixel is 1 and result is 0
-    //         }
-    //     }
-
-    //     reg[0xF] = vf ? 1 : 0;
-
-    //     need_redraw = 1;
-    // }
-
+        ExecutionStatus::OK
+    }
 
     // fx07 readdt Vx = DT
     fn op_fx07_readdt(&mut self, x: usize) -> ExecutionStatus {
         self.register[x] = self.dt;
         ExecutionStatus::OK
+    }
+
+    // fx0a waitkey LD Vx, K
+    fn op_fx0a_waitkey(&mut self, x: usize, device: &mut dyn IOInterface) -> ExecutionStatus {
+        let key = device.read_any_key();
+
+        if key == NO_KEY {
+            self.pc -= 2;
+            ExecutionStatus::WaitForKey
+        } else {
+            self.register[x] = key;
+            ExecutionStatus::OK
+        }
     }
 
     // fx15 loaddt DT = Vx
@@ -584,6 +591,7 @@ pub enum ExecutionStatus {
     OK,
     Halt,
     RuntimeError,
+    WaitForKey,
 }
 
 fn runtime_error(_s : &str) -> ExecutionStatus {

@@ -3,13 +3,14 @@
 import { Machine, ExecutionStatus } from "./pkg";
 import { loadROM } from "./webplayer/rom_loader";
 import { Display } from "./webplayer/display";
+import { Keypad } from "./webplayer/keypad";
 import Beeper from "./webplayer/beeper";
 
-const canvas = document.getElementById("display");
-
-
 const machine = Machine.new();
+const canvas = document.getElementById("display");
 const display = new Display(canvas);
+const keypad = new Keypad();
+
 let halted = true;
 let playing = false;
 let animationId = null;
@@ -22,13 +23,15 @@ function loop() {
   // update display
   let updates = machine.get_display_update();
 
-  // console.log("cls:", updates.display_cleared, "updated:", updates.display_updated);
-
   if (updates.display_cleared) {
     display.clearCanvas();
   }
 
   display.draw(updates.display_ptr, updates.updated_ptr, updates.buffer_size);
+
+  // update keys
+  let [pressed, released] = keypad.read_keys();
+  machine.set_keys(pressed, released);
 
   if (result == ExecutionStatus.OK) {
     animationId = requestAnimationFrame(loop);

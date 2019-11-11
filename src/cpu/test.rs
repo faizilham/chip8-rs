@@ -44,7 +44,15 @@ struct MockDevice {}
 impl IOInterface for MockDevice {
     fn clear_display(&mut self) {}
 
-    fn draw_pixel(&mut self, x: u8, y: u8) -> u8 {
+    fn draw_pixel(&mut self, _x: u8, _y: u8) -> u8 {
+        0
+    }
+
+    fn key_pressed(&self, _key: u8) -> bool {
+        false
+    }
+
+    fn read_any_key(&mut self) -> u8 {
         0
     }
 }
