@@ -1,12 +1,13 @@
 // import wasm resources
 // wasm-pkg will be resolved to builds in ./pkg by webpack
 import { Machine, ExecutionStatus } from "./pkg";
-import { loadROM } from "./webplayer/rom_loader";
+import { ROMLoader } from "./webplayer/rom_loader";
 import { Display } from "./webplayer/display";
 import { Keypad } from "./webplayer/keypad";
 import { Beeper } from "./webplayer/beeper";
 
 const machine = Machine.new();
+const loader = new ROMLoader(machine);
 const canvas = document.getElementById("display");
 const display = new Display(canvas);
 const beeper = new Beeper();
@@ -60,6 +61,10 @@ function start() {
   if (playing) return;
 
   if (halted) {
+    if (!loader.reloadROM()) {
+      return;
+    }
+
     display.clearCanvas();
     machine.reset();
   }
@@ -106,7 +111,7 @@ loadbtn.onclick = () => {
 
   if (!file) return;
 
-  loadROM(machine, file)
+  loader.loadFile(file)
     .then(() => {
       halt();
       display.clearCanvas();

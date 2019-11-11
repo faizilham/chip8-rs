@@ -1,33 +1,48 @@
 import { memory } from "wasm-pkg/chip8_rs_bg"
 
-
-export function loadROM(machine, file) {
-  const max_rom_size = machine.max_rom_size();
-
-  if (file.size > max_rom_size) {
-    return Promise.reject("File too big");
+export class ROMLoader {
+  constructor(machine) {
+    this.buffer = null;
+    this.max_rom_size = machine.max_rom_size()
+    this.rom = new Uint8Array(memory.buffer, machine.get_rom_ptr(), this.max_rom_size);
   }
 
-  const reader = new FileReader();
+  loadFile(file) {
+    if (file.size > this.max_rom_size) {
+      return Promise.reject("File too big");
+    }
 
-  const promise = new Promise((resolve, reject) => {
-    reader.onload = (e) => {
-      const buffer = new Uint8Array(e.target.result);
-      const rom = new Uint8Array(memory.buffer, machine.get_rom_ptr(), max_rom_size);
+    const reader = new FileReader();
 
-      for (let i = 0; i < buffer.length; i++) {
-        rom[i] = buffer[i];
-      }
+    const promise = new Promise((resolve, reject) => {
+      reader.onload = (e) => {
+        this.buffer = new Uint8Array(e.target.result);
 
-      resolve();
-    };
+        this.reloadROM();
 
-    reader.onerror = (e) => {
-      reject(e);
-    };
-  });
+        resolve();
+      };
 
-  reader.readAsArrayBuffer(file);
+      reader.onerror = (e) => {
+        reject(e);
+      };
+    });
 
-  return promise;
+    reader.readAsArrayBuffer(file);
+
+    return promise;
+  }
+
+  reloadROM() {
+    if (!this.buffer) {
+      console.log("ROM not yet loaded");
+      return false;
+    }
+
+    for (let i = 0; i < this.buffer.length; i++) {
+      this.rom[i] = this.buffer[i];
+    }
+
+    return true;
+  }
 }
