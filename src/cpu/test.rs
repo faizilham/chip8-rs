@@ -997,6 +997,7 @@ fn test_op_fx55_storeg() {
     let x = (nvals - 1) as u8;
 
     tester.set_ops(0xf0 | x, 0x55);
+    tester.cpu.incr_ir_after_reg = true;
     tester.cpu.ir = ir;
 
     for i in 0..nvals {
@@ -1018,6 +1019,7 @@ fn test_op_fx55_storeg() {
     let x = (nvals - 1) as u8;
 
     tester.set_ops(0xf0 | x, 0x55);
+    tester.cpu.incr_ir_after_reg = true;
     tester.cpu.ir = ir;
 
     for i in 0..nvals {
@@ -1046,6 +1048,7 @@ fn test_op_fx65_ldreg() {
     let x = (nvals - 1) as u8;
 
     tester.set_ops(0xf0 | x, 0x65);
+    tester.cpu.incr_ir_after_reg = true;
     tester.cpu.ir = ir;
 
     for i in 0..nvals {
@@ -1072,6 +1075,7 @@ fn test_op_fx65_ldreg() {
     let x = (nvals - 1) as u8;
 
     tester.set_ops(0xf0 | x, 0x65);
+    tester.cpu.incr_ir_after_reg = true;
     tester.cpu.ir = ir;
 
     for i in 0..nvals {

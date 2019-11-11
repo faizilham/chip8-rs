@@ -17,6 +17,9 @@ pub struct CPU {
     sp: usize,                  // stack pointer. 0 means empty,
 
     dt: u8,                     // delay timer
+
+    // MODES:
+    incr_ir_after_reg: bool
 }
 
 impl CPU {
@@ -32,7 +35,9 @@ impl CPU {
             pc: PROGRAM_START,
             stack,
             sp: 0,
-            dt: 0
+            dt: 0,
+
+            incr_ir_after_reg: false  // TODO: make this configurable through init and set methods
         }
     }
 
@@ -557,7 +562,9 @@ impl CPU {
             std::ptr::copy(src, dest, x + 1);
         }
 
-        self.ir += x + 1;
+        if self.incr_ir_after_reg {
+            self.ir += x + 1;
+        }
 
         ExecutionStatus::OK
     }
@@ -577,7 +584,9 @@ impl CPU {
             std::ptr::copy(src, dest, x + 1);
         }
 
-        self.ir += x + 1;
+        if self.incr_ir_after_reg {
+            self.ir += x + 1;
+        }
 
         ExecutionStatus::OK
     }
