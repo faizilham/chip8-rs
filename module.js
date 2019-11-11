@@ -2,14 +2,15 @@
 // wasm-pkg will be resolved to builds in ./pkg by webpack
 import { Machine, ExecutionStatus } from "./pkg";
 import { ROMLoader } from "./webplayer/rom_loader";
-import { Display } from "./webplayer/display";
+import { Display, PhosphorDisplay } from "./webplayer/display";
 import { Keypad } from "./webplayer/keypad";
 import { Beeper } from "./webplayer/beeper";
 
 const machine = Machine.new();
 const loader = new ROMLoader(machine);
 const canvas = document.getElementById("display");
-const display = new Display(canvas);
+// const display = new Display(canvas);
+const display = new PhosphorDisplay(canvas);
 const beeper = new Beeper();
 const keypad = new Keypad();
 
@@ -65,7 +66,7 @@ function start() {
       return;
     }
 
-    display.clearCanvas();
+    display.resetCanvas();
     machine.reset();
   }
 
@@ -80,6 +81,7 @@ function pause() {
   if (!playing) return;
   playing = false;
   beeper.stop();
+  display.finishDraw();
 
   if (animationId) {
     cancelAnimationFrame(animationId);
@@ -93,6 +95,7 @@ function halt() {
   halted = true;
   playing = false;
   beeper.stop();
+  display.finishDraw();
 
   if (animationId) {
     cancelAnimationFrame(animationId);
@@ -114,7 +117,7 @@ loadbtn.onclick = () => {
   loader.loadFile(file)
     .then(() => {
       halt();
-      display.clearCanvas();
+      display.resetCanvas();
       startpause.removeAttribute("disabled");
     })
     .catch((err) =>{

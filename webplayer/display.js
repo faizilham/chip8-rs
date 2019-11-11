@@ -80,6 +80,7 @@ export class Display {
   }
 
   clearCanvas() {
+    console.log("cls");
     this.context.beginPath();
 
     this.context.fillStyle = this.offColor;
@@ -92,5 +93,162 @@ export class Display {
 
     this.context.closePath();
     this.context.stroke();
+  }
+
+  resetCanvas() {
+    this.clearCanvas();
+  }
+
+  finishDraw() {
+    // do nothing
+  }
+}
+
+// TODO: optimize?
+export class PhosphorDisplay {
+  constructor(canvas) {
+    this.context = canvas.getContext("2d", {alpha: false});
+
+    this.cols = 64;
+    this.rows = 32;
+    this.pixelSize = 10;
+
+    this.canvasWidth = this.cols*this.pixelSize;
+    this.canvasHeight = this.rows*this.pixelSize;
+
+    canvas.width = this.canvasWidth;
+    canvas.height = this.canvasHeight;
+
+    // 4 level of color every 2 frame
+    this.framePersistence = 2 ;
+
+    this.colors = [
+      "#000000",
+      "#555555",
+      "#aaaaaa",
+      "#ffffff"
+    ];
+
+    this.maxColor = this.colors.length - 1;
+
+    this.logicalDisplay = new Array(this.rows * this.cols).fill(0);
+    this.physicalDisplay = new Array(this.rows * this.cols).fill(0);
+  }
+
+  draw(pixelPtr, changedPtr, size) {
+    let i;
+    this.context.beginPath();
+
+    if (pixelPtr != null) {
+      const pixels = new Uint8Array(memory.buffer, pixelPtr, size);
+      const changed = new Uint8Array(memory.buffer, changedPtr, size);
+
+      // update values and draw on
+      this.context.fillStyle = this.colors[this.maxColor];
+
+      i = 0;
+      for (let row = 0; row < this.rows; row++) {
+        for (let col = 0; col < this.cols; col++) {
+          let idx = i;
+          i++;
+
+          if (!changed[idx]) {
+            continue;
+          }
+
+          this.logicalDisplay[idx] = pixels[idx];
+
+          if (pixels[idx] === 1) {
+            this.physicalDisplay[idx] = this.maxColor * this.framePersistence;
+            this.drawPixel(col, row);
+          }
+        }
+      }
+    }
+
+    // dim off
+    let dimFinished = true;
+
+    const dimmedPixels = new Array(this.colors.length - 1).fill(null).map(() => []);
+
+    i = 0;
+    for (let row = 0; row < this.rows; row++) {
+      for (let col = 0; col < this.cols; col++) {
+        let idx = i;
+        i++;
+
+        if (this.logicalDisplay[idx] === 1) continue; // skip if on
+        if (this.physicalDisplay[idx] === 0) continue; // skip if fully off
+
+        let currentLevel = this.physicalDisplay[idx] - 1;
+        this.physicalDisplay[idx] = currentLevel;
+
+        if (currentLevel % this.framePersistence === 0) {
+          let color = currentLevel / this.framePersistence;
+          dimmedPixels[color].push([col, row]);
+        }
+
+        dimFinished = false;
+      }
+    }
+
+    // draw dimmed pixels
+    for (let color = 0; color < dimmedPixels.length; color++) {
+      let updates = dimmedPixels[color];
+      this.context.fillStyle = this.colors[color];
+
+      for (let j = 0; j < updates.length; j++) {
+        let [col, row] = updates[j];
+        this.drawPixel(col, row);
+      }
+    }
+
+    this.context.closePath();
+    this.context.stroke();
+
+    return dimFinished;
+  }
+
+  drawPixel(col, row) {
+    this.context.fillRect(
+      col * this.pixelSize,
+      row * this.pixelSize,
+      this.pixelSize,
+      this.pixelSize
+    );
+  }
+
+  clearCanvas() {
+    for (let i = 0; i < this.logicalDisplay.length; i++) {
+      this.logicalDisplay[i] = 0;
+    }
+  }
+
+  resetCanvas() {
+    for (let i = 0; i < this.logicalDisplay.length; i++) {
+      this.logicalDisplay[i] = 0;
+      this.physicalDisplay[i] = 0;
+    }
+
+    this.context.beginPath();
+
+    this.context.fillStyle = this.colors[0];
+    this.context.fillRect(
+      0,
+      0,
+      this.canvasWidth,
+      this.canvasHeight
+    );
+
+    this.context.closePath();
+    this.context.stroke();
+  }
+
+  finishDraw() {
+    let finished = this.draw();
+
+    if (!finished) {
+      requestAnimationFrame(() => this.finishDraw());
+    }
   }
 }
