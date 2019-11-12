@@ -20,7 +20,8 @@ pub struct CPU {
     st: u8,                     // sound timer
 
     // MODES:
-    incr_ir_after_reg: bool
+    quirk_shift: bool,
+    quirk_loadstore_reg: bool
 }
 
 impl CPU {
@@ -39,7 +40,10 @@ impl CPU {
             dt: 0,
             st: 0,
 
-            incr_ir_after_reg: false  // TODO: make this configurable through init and set methods
+            // TODO: make these configurable through init and set methods
+            quirk_shift: false,
+            quirk_loadstore_reg: false,
+
         }
     }
 
@@ -387,9 +391,17 @@ impl CPU {
     }
 
     // 8xy6 shr Vx = Vx >> 1. VF = last bit
-    fn op_8xy6_shr(&mut self, x: usize, _y: usize) -> ExecutionStatus {
-        self.register[0xF] = self.register[x] & 0x01;
-        self.register[x] >>= 1;
+    fn op_8xy6_shr(&mut self, x: usize, y: usize) -> ExecutionStatus {
+        let reg = if self.quirk_shift {
+            x
+        } else {
+            y
+        };
+
+        let val = self.register[reg];
+
+        self.register[0xF] = val & 0x01;
+        self.register[x] = val >> 1;
         ExecutionStatus::OK
     }
 
@@ -404,9 +416,17 @@ impl CPU {
     }
 
     // 8xyE shl Vx = Vx << 1. VF = first bit
-    fn op_8xye_shl(&mut self, x: usize, _y: usize) -> ExecutionStatus {
-        self.register[0xF] = (self.register[x] & 0x80) >> 7;
-        self.register[x] <<= 1;
+    fn op_8xye_shl(&mut self, x: usize, y: usize) -> ExecutionStatus {
+        let reg = if self.quirk_shift {
+            x
+        } else {
+            y
+        };
+
+        let val = self.register[reg];
+
+        self.register[0xF] = (val & 0x80) >> 7;
+        self.register[x] = val << 1;
 
         ExecutionStatus::OK
     }
@@ -579,7 +599,7 @@ impl CPU {
             std::ptr::copy(src, dest, x + 1);
         }
 
-        if self.incr_ir_after_reg {
+        if !self.quirk_loadstore_reg {
             self.ir += x + 1;
         }
 
@@ -601,7 +621,7 @@ impl CPU {
             std::ptr::copy(src, dest, x + 1);
         }
 
-        if self.incr_ir_after_reg {
+        if !self.quirk_loadstore_reg {
             self.ir += x + 1;
         }
 

@@ -577,7 +577,7 @@ fn test_op_8xy6_shr() {
     let expect_vf = 1;
 
     tester.set_ops(0x80, 0x16);
-    tester.cpu.register[0] = val;
+    tester.cpu.register[1] = val;
 
     let result = tester.tick_cpu();
 
@@ -591,6 +591,21 @@ fn test_op_8xy6_shr() {
     let expect_vf = 0;
 
     tester.set_ops(0x80, 0x16);
+    tester.cpu.register[1] = val;
+
+    let result = tester.tick_cpu();
+
+    assert_eq!(result, ExecutionStatus::OK);
+    assert_eq!(tester.cpu.register[0], fin_val);
+    assert_eq!(tester.cpu.register[0xF], expect_vf);
+
+    // quirk case: Vy is not used
+    let val = 0b0000_0111;
+    let fin_val = val >> 1;
+    let expect_vf = 1;
+
+    tester.set_ops(0x80, 0x16);
+    tester.cpu.quirk_shift = true;
     tester.cpu.register[0] = val;
 
     let result = tester.tick_cpu();
@@ -676,7 +691,7 @@ fn test_op_8xye_shl() {
     let expect_vf = 1;
 
     tester.set_ops(0x80, 0x1E);
-    tester.cpu.register[0] = val;
+    tester.cpu.register[1] = val;
 
     let result = tester.tick_cpu();
 
@@ -690,6 +705,21 @@ fn test_op_8xye_shl() {
     let expect_vf = 0;
 
     tester.set_ops(0x80, 0x1E);
+    tester.cpu.register[1] = val;
+
+    let result = tester.tick_cpu();
+
+    assert_eq!(result, ExecutionStatus::OK);
+    assert_eq!(tester.cpu.register[0], fin_val);
+    assert_eq!(tester.cpu.register[0xF], expect_vf);
+
+    // quirk test: Vy is not used
+    let val = 0b1101_0000;
+    let fin_val = val << 1;
+    let expect_vf = 1;
+
+    tester.set_ops(0x80, 0x1E);
+    tester.cpu.quirk_shift = true;
     tester.cpu.register[0] = val;
 
     let result = tester.tick_cpu();
@@ -997,7 +1027,6 @@ fn test_op_fx55_storeg() {
     let x = (nvals - 1) as u8;
 
     tester.set_ops(0xf0 | x, 0x55);
-    tester.cpu.incr_ir_after_reg = true;
     tester.cpu.ir = ir;
 
     for i in 0..nvals {
@@ -1019,7 +1048,6 @@ fn test_op_fx55_storeg() {
     let x = (nvals - 1) as u8;
 
     tester.set_ops(0xf0 | x, 0x55);
-    tester.cpu.incr_ir_after_reg = true;
     tester.cpu.ir = ir;
 
     for i in 0..nvals {
@@ -1034,6 +1062,28 @@ fn test_op_fx55_storeg() {
     }
 
     assert_eq!(tester.cpu.ir, ir + x as usize + 1);
+
+    // quirk case: I is not increased by x + 1
+    let vals = [5, 2, 7, 4, 1];
+    let nvals = vals.len();
+    let x = (nvals - 1) as u8;
+
+    tester.set_ops(0xf0 | x, 0x55);
+    tester.cpu.quirk_loadstore_reg = true;
+    tester.cpu.ir = ir;
+
+    for i in 0..nvals {
+        tester.cpu.register[i] = vals[i];
+    }
+
+    let result = tester.tick_cpu();
+
+    assert_eq!(result, ExecutionStatus::OK);
+    for i in 0..nvals {
+        assert_eq!(tester.cpu.memory[ir + i], vals[i]);
+    }
+
+    assert_eq!(tester.cpu.ir, ir);
 }
 
 // fx65 ldreg [V0..Vx] = M[I..I+x], I += x + 1
@@ -1048,7 +1098,6 @@ fn test_op_fx65_ldreg() {
     let x = (nvals - 1) as u8;
 
     tester.set_ops(0xf0 | x, 0x65);
-    tester.cpu.incr_ir_after_reg = true;
     tester.cpu.ir = ir;
 
     for i in 0..nvals {
@@ -1075,7 +1124,6 @@ fn test_op_fx65_ldreg() {
     let x = (nvals - 1) as u8;
 
     tester.set_ops(0xf0 | x, 0x65);
-    tester.cpu.incr_ir_after_reg = true;
     tester.cpu.ir = ir;
 
     for i in 0..nvals {
@@ -1095,4 +1143,31 @@ fn test_op_fx65_ldreg() {
         assert_eq!(tester.cpu.register[i], 0);
     }
 
+    // quirk case: I is not increased by x + 1
+    // case x > 0 (len > 1)
+    let ir = 0x500;
+    let vals = [5, 2, 7, 4, 1];
+    let nvals = vals.len();
+    let x = (nvals - 1) as u8;
+
+    tester.set_ops(0xf0 | x, 0x65);
+    tester.cpu.quirk_loadstore_reg = true;
+    tester.cpu.ir = ir;
+
+    for i in 0..nvals {
+        tester.cpu.memory[ir + i] = vals[i];
+    }
+
+    let result = tester.tick_cpu();
+
+    assert_eq!(result, ExecutionStatus::OK);
+    assert_eq!(tester.cpu.ir, ir);
+
+    for i in 0..nvals {
+        assert_eq!(tester.cpu.register[i], vals[i]);
+    }
+
+    for i in nvals..16-nvals {
+        assert_eq!(tester.cpu.register[i], 0);
+    }
 }
