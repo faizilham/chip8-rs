@@ -862,6 +862,30 @@ fn test_op_fx15_loaddt() {
 }
 
 #[wasm_bindgen_test]
+fn test_op_fx18_loadst() {
+    let mut tester = CPUTester::new();
+    let val = 0x23;
+
+    // reg 0 case
+    tester.set_ops(0xF0, 0x18);
+    tester.cpu.register[0] = val;
+
+    let result = tester.tick_cpu();
+
+    assert_eq!(result, ExecutionStatus::OK);
+    assert_eq!(tester.cpu.st, val);
+
+    // reg 3 case
+    tester.set_ops(0xF3, 0x18);
+    tester.cpu.register[3] = val;
+
+    let result = tester.tick_cpu();
+
+    assert_eq!(result, ExecutionStatus::OK);
+    assert_eq!(tester.cpu.st, val);
+}
+
+#[wasm_bindgen_test]
 fn test_op_fx1e_addi() {
     let mut tester = CPUTester::new();
 
