@@ -15,12 +15,6 @@ export class Game {
     this.machine = Machine.new();
     this.loader = new ROMLoader(this.machine);
 
-    const blueYellow = ["#000044", "#808088", "#FFFFCC"];
-    const blackGreen = ["#222222", "#77912B", "#CCFF33"];
-    const blackWhite = ["#222222", "#919191", "#FFFFFF"];
-
-    const colors = blueYellow;
-
     this.normalDisplay = new Display(canvas);
     this.phosphorDisplay = new PhosphorDisplay(canvas);
 

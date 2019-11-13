@@ -7,7 +7,7 @@
   <body>
     <div class="container">
       <canvas class="display" id="display"></canvas>
-      <div class="config hidden" id="configwindow">
+      <div class="window hidden" id="configwindow">
           <div class="config-body">
             <div class="config-title">Color Scheme</div>
             <div class="config-cell">
@@ -48,12 +48,24 @@
 
           </div>
       </div>
+      <div class="window hidden" id="helpwindow">
+        <h4>Keymappings</h4>
+        <pre class="keymapping">
+chip8        pc keyboard
+1 2 3 C      1 2 3 4
+4 5 6 D      Q W E R
+7 8 9 E      A S D F
+A 0 B F      Z X C V</pre>
+        <div id="romdescription" class="description"></div>
+        <button id="closehelp" class="close-help-btn">Close</button>
+      </div>
       <div class="menu" id="menu">
           <input type="file" class="hidden" id="fileinput" accept=".ch8" />
           <select id="romselect"></select>
           <button id="startpause">Start</button>
           <button id="turnoff">Turn Off</button>
           <button id="configbtn" title="Set Configuration">Config</button>
+          <button id="helpbtn">Help</button>
       </div>
     </div>
     <noscript>This page contains webassembly and javascript content, please enable javascript in your browser.</noscript>

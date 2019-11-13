@@ -6,6 +6,7 @@ const canvas = document.getElementById("display");
 const startpause = document.getElementById("startpause");
 const turnoff = document.getElementById("turnoff");
 const openconfig = document.getElementById("configbtn");
+const openhelp = document.getElementById("helpbtn");
 
 const game = new Game(canvas);
 
@@ -70,6 +71,8 @@ quirkLoadRegChk.onchange = setQuirkConfig;
 quirkClipSpriteChk.onchange = setQuirkConfig;
 
 /// rom list
+const romdescription = document.getElementById("romdescription");
+
 const fileinput = document.getElementById("fileinput");
 let openFileOption;
 
@@ -101,6 +104,7 @@ const romselect = document.getElementById("romselect");
 romselect.onchange = (e) => {
   let idx = e.target.value;
 
+  romdescription.innerHTML = "";
   openFileOption.textContent = "Open File...";
   startpause.setAttribute("disabled", "true");
 
@@ -124,6 +128,8 @@ romselect.onchange = (e) => {
     quirkShiftChk.checked = !!quirks.shift;
     quirkLoadRegChk.checked = !!quirks.loadStore;
     quirkClipSpriteChk.checked = !!quirks.clipSprite;
+
+    romdescription.innerHTML = `<h4>${rom.title} Description</h4>${rom.description}`
 
     startpause.removeAttribute("disabled");
   });
@@ -174,28 +180,56 @@ function updateDisplayConfig() {
 colorSchemeSelect.onchange = updateDisplayConfig;
 displayType.onchange = updateDisplayConfig;
 
-/// config window
-
-const configwindow = document.getElementById("configwindow");
+//// windows
 const menu = document.getElementById("menu");
+const configwindow = document.getElementById("configwindow");
+const helpwindow = document.getElementById("helpwindow");
 
-toggleConfig(false);
-
-function toggleConfig(show) {
+function toggleWindow(window, show) {
   if (show) {
-    configwindow.className = "config";
+    window.className = "window";
     canvas.className = "display hidden";
     menu.className = "menu hidden";
   } else {
-    configwindow.className = "config hidden";
+    window.className = "window hidden";
     canvas.className = "display";
     menu.className = "menu";
   }
 }
 
-openconfig.onclick = () => {
-  toggleConfig(true);
+function toggleConfig(show) {
+  toggleWindow(configwindow, show);
 }
+
+function toggleHelp(show) {
+  toggleWindow(helpwindow, show);
+}
+
+toggleConfig(false);
+toggleHelp(false);
+
+/// config window buttons
+
+openconfig.onclick = () => toggleConfig(true);
 
 const closeconfig = document.getElementById("closeconfig");
 closeconfig.onclick = () => toggleConfig(false);
+
+/// help window buttons
+
+openhelp.onclick = () => {
+  if (game.playing) {
+    game.pause();
+  }
+
+  toggleHelp(true);
+}
+
+const closehelp = document.getElementById("closehelp");
+closehelp.onclick = () => {
+  if (!game.playing && !game.halted) {
+    game.start();
+  }
+
+  toggleHelp(false);
+};
