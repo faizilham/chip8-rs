@@ -37,13 +37,13 @@ game.addListener((state) => {
     case GameState.HALTED: {
       openconfig.removeAttribute("disabled");
       openconfig.setAttribute("title", "Set Configuration");
-      startpause.textContent = "Start";
+      startpause.textContent = "Play";
       turnoff.setAttribute("disabled", "true");
       break;
     }
 
     case GameState.PAUSED:
-      startpause.textContent = "Start";
+      startpause.textContent = "Play";
   }
 });
 
@@ -153,7 +153,6 @@ fileinput.onchange = (e) => {
 }
 
 /// display configs
-
 const colorSchemeSelect = document.getElementById("colorscheme");
 colorSchemeSelect.value = "yellow-blue";
 
@@ -175,9 +174,20 @@ function updateDisplayConfig() {
   config.displayType = displayType.value;
 
   game.setConfig(config);
+
+  return config;
 }
 
-colorSchemeSelect.onchange = updateDisplayConfig;
+colorSchemeSelect.onchange = () => {
+  const colorScheme = updateDisplayConfig().colorScheme;
+
+  const root = document.documentElement;
+
+  root.style.setProperty("--back-color", colorScheme[0]);
+  root.style.setProperty("--middle-color", colorScheme[1]);
+  root.style.setProperty("--front-color", colorScheme[2]);
+};
+
 displayType.onchange = updateDisplayConfig;
 
 //// windows
