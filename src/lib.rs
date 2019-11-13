@@ -37,8 +37,9 @@ impl Machine {
 
     /*** Runtime Related ***/
 
-    pub fn set_quirks(&mut self, shift: bool, loadstore: bool) {
+    pub fn set_quirks(&mut self, shift: bool, loadstore: bool, clipsprite: bool) {
         self.cpu.set_quirks(shift, loadstore);
+        self.device.set_quirks(clipsprite);
     }
 
     pub fn reset(&mut self) {

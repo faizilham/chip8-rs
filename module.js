@@ -28,12 +28,14 @@ game.addListener((state) => {
   switch(state) {
     case GameState.PLAYING: {
       openconfig.setAttribute("disabled", "true");
+      openconfig.setAttribute("title", "Turn off the machine before setting the configuration");
       turnoff.removeAttribute("disabled");
       startpause.textContent = "Pause";
       break;
     }
     case GameState.HALTED: {
       openconfig.removeAttribute("disabled");
+      openconfig.setAttribute("title", "Set Configuration");
       startpause.textContent = "Start";
       turnoff.setAttribute("disabled", "true");
       break;
@@ -44,10 +46,34 @@ game.addListener((state) => {
   }
 });
 
-/// init rom list
+/// quirk config
+let quirkShiftChk = document.getElementById("quirkShiftChk");
+let quirkLoadRegChk = document.getElementById("quirkLoadRegChk");
+let quirkClipSpriteChk = document.getElementById("quirkClipSpriteChk");
+
+function setQuirkConfig() {
+  const quirks = {
+    shift: quirkShiftChk.checked,
+    loadStore: quirkLoadRegChk.checked,
+    clipSprite: quirkClipSpriteChk.checked,
+  };
+
+  game.setConfig({ quirks });
+}
+
+quirkShiftChk.checked = false;
+quirkLoadRegChk.checked = false;
+quirkClipSpriteChk.checked = false;
+
+quirkShiftChk.onchange = setQuirkConfig;
+quirkLoadRegChk.onchange = setQuirkConfig;
+quirkClipSpriteChk.onchange = setQuirkConfig;
+
+/// rom list
 const fileinput = document.getElementById("fileinput");
 let openFileOption;
 
+// init rom lists
 const romselect = document.getElementById("romselect");
 (function (){
 
@@ -76,6 +102,7 @@ romselect.onchange = (e) => {
   let idx = e.target.value;
 
   openFileOption.textContent = "Open File...";
+  startpause.setAttribute("disabled", "true");
 
   if (idx === "none") return;
   if (idx === "file") {
@@ -93,6 +120,10 @@ romselect.onchange = (e) => {
 
     const quirks = rom.quirks || {};
     game.setConfig({ quirks });
+
+    quirkShiftChk.checked = !!quirks.shift;
+    quirkLoadRegChk.checked = !!quirks.loadStore;
+    quirkClipSpriteChk.checked = !!quirks.clipSprite;
 
     startpause.removeAttribute("disabled");
   });
@@ -115,35 +146,7 @@ fileinput.onchange = (e) => {
   });
 }
 
-
-
-/// config window
-
-const configwindow = document.getElementById("configwindow");
-const menu = document.getElementById("menu");
-
-let configOpen = false;
-
-toggleConfig(false);
-
-function toggleConfig(show) {
-  if (show) {
-    configOpen = true;
-    configwindow.className = "config";
-    canvas.className = "display hidden";
-    menu.className = "menu hidden";
-  } else {
-    configOpen = false;
-    configwindow.className = "config hidden";
-    canvas.className = "display";
-    menu.className = "menu";
-  }
-}
-
-openconfig.onclick = () => {
-  toggleConfig(true);
-}
-
+/// display configs
 
 const colorSchemeSelect = document.getElementById("colorscheme");
 colorSchemeSelect.value = "yellow-blue";
@@ -170,6 +173,29 @@ function updateDisplayConfig() {
 
 colorSchemeSelect.onchange = updateDisplayConfig;
 displayType.onchange = updateDisplayConfig;
+
+/// config window
+
+const configwindow = document.getElementById("configwindow");
+const menu = document.getElementById("menu");
+
+toggleConfig(false);
+
+function toggleConfig(show) {
+  if (show) {
+    configwindow.className = "config";
+    canvas.className = "display hidden";
+    menu.className = "menu hidden";
+  } else {
+    configwindow.className = "config hidden";
+    canvas.className = "display";
+    menu.className = "menu";
+  }
+}
+
+openconfig.onclick = () => {
+  toggleConfig(true);
+}
 
 const closeconfig = document.getElementById("closeconfig");
 closeconfig.onclick = () => toggleConfig(false);

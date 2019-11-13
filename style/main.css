@@ -17,6 +17,12 @@ body {
 
 .config-body {
   margin: 1em;
+  font-size: 10pt;
+}
+
+.config-title {
+  margin-top: 0.5em;
+  font-weight: bold;
 }
 
 .config-cell {
@@ -31,8 +37,13 @@ body {
   text-align: left;
 }
 
+.chk-quirk {
+  display: block;
+}
+
 .menu {
   height: 30px;
+  padding-left: 0.25em;
 }
 
 .hidden {
