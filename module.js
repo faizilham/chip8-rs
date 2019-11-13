@@ -1,110 +1,30 @@
 // import wasm resources
-// wasm-pkg will be resolved to builds in ./pkg by webpack
-import { Machine, ExecutionStatus } from "./pkg";
-import { ROMLoader } from "./webplayer/rom_loader";
-import { Display, PhosphorDisplay } from "./webplayer/display";
-import { Keypad } from "./webplayer/keypad";
-import { Beeper } from "./webplayer/beeper";
+import {Game, GameState} from "./webplayer/game";
 
-const machine = Machine.new();
-const loader = new ROMLoader(machine);
 const canvas = document.getElementById("display");
-// const display = new Display(canvas);
-const display = new PhosphorDisplay(canvas);
-const beeper = new Beeper();
-const keypad = new Keypad();
-
-let halted = true;
-let playing = false;
-let animationId = null;
-
-function loop() {
-  animationId = null;
-
-  // update keys
-  let [pressed, released] = keypad.read_keys();
-  machine.set_keys(pressed, released);
-
-  // run machine
-  let result = machine.update();
-
-  // update sound
-  beeper.setPlaying(machine.is_beeping());
-
-  // update display
-  let updates = machine.get_display_update();
-
-  if (updates.display_cleared) {
-    display.clearCanvas();
-  }
-
-  display.draw(updates.display_ptr, updates.updated_ptr, updates.buffer_size);
-
-  // request next frame
-  if (result == ExecutionStatus.OK) {
-    animationId = requestAnimationFrame(loop);
-  } else {
-    halt();
-  }
-}
-
 const startpause = document.getElementById("startpause");
 
+const game = new Game(canvas);
+
 startpause.onclick = () => {
-  if (!playing) {
-    start();
+  if (!game.playing) {
+    game.start();
   } else {
-    pause();
+    game.pause();
   }
 }
 
-function start() {
-  if (playing) return;
-
-  if (halted) {
-    if (!loader.reloadROM()) {
-      return;
+game.addListener((state) => {
+  switch(state) {
+    case GameState.PLAYING: {
+      startpause.textContent = "Pause";
+      break;
     }
-
-    display.resetCanvas();
-    machine.reset();
+    default: {
+      startpause.textContent = "Start";
+    }
   }
-
-  playing = true;
-  halted = false;
-
-  animationId = requestAnimationFrame(loop);
-  startpause.textContent = "Pause";
-}
-
-function pause() {
-  if (!playing) return;
-  playing = false;
-  beeper.stop();
-  display.finishDraw();
-
-  if (animationId) {
-    cancelAnimationFrame(animationId);
-    animationId = null;
-  }
-
-  startpause.textContent = "Start";
-}
-
-function halt() {
-  halted = true;
-  playing = false;
-  beeper.stop();
-  display.finishDraw();
-
-  if (animationId) {
-    cancelAnimationFrame(animationId);
-    animationId = null;
-  }
-
-  startpause.textContent = "Start";
-}
-
+});
 
 const loadbtn = document.getElementById("loadbtn");
 const fileinput = document.getElementById("fileinput");
@@ -114,13 +34,7 @@ loadbtn.onclick = () => {
 
   if (!file) return;
 
-  loader.loadFile(file)
-    .then(() => {
-      halt();
-      display.resetCanvas();
-      startpause.removeAttribute("disabled");
-    })
-    .catch((err) =>{
-      console.error(err);
-    })
+  game.loadFile(file).then(() => {
+    startpause.removeAttribute("disabled");
+  });
 }
