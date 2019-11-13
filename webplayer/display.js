@@ -1,7 +1,11 @@
 import { memory } from "wasm-pkg/chip8_rs_bg"
 
+const defaultColors = ["#000044", "#808088", "#FFFFCC"];
+const defaultOnColor = defaultColors[0];
+const defaultOffColor = defaultColors[defaultColors.length - 1];
+
 export class Display {
-  constructor(canvas, onColor = "#ffffff", offColor = "#000000") {
+  constructor(canvas, onColor = defaultOnColor, offColor = defaultOffColor) {
     this.setColor(onColor, offColor);
 
     this.context = canvas.getContext("2d", {alpha: false});
@@ -105,7 +109,7 @@ export class Display {
 
 // TODO: optimize?
 export class PhosphorDisplay {
-  constructor(canvas) {
+  constructor(canvas, colors = defaultColors, framePersistence = 2) {
     this.context = canvas.getContext("2d", {alpha: false});
 
     this.cols = 64;
@@ -118,20 +122,20 @@ export class PhosphorDisplay {
     canvas.width = this.canvasWidth;
     canvas.height = this.canvasHeight;
 
-    // 4 level of color every 2 frame
-    this.framePersistence = 2 ;
+    this.physicalDisplay = new Array(this.rows * this.cols).fill(0);
 
-    this.colors = [
-      "#000000",
-      "#555555",
-      "#aaaaaa",
-      "#ffffff"
-    ];
+    this.setColor(colors, framePersistence);
+  }
+
+  setColor(colors, framePersistence) {
+    // how long a level of color persist when the pixel is off
+    this.framePersistence = framePersistence;
+
+    // levels of colors possible between off (first index) and on (last index)
+    this.colors = colors;
 
     this.maxColor = this.colors.length - 1;
     this.maxPhysicalColor = this.maxColor * this.framePersistence;
-
-    this.physicalDisplay = new Array(this.rows * this.cols).fill(0);
   }
 
   draw(pixelPtr, changedPtr, size) {

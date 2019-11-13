@@ -5,11 +5,36 @@
     <title>Hello wasm-pack!</title>
   </head>
   <body>
-    <input type="file" id="fileinput" /><button id="loadbtn">Load</button>
-    <button id="startpause" disabled>Start</button>
-
-    <div>
+    <div class="container">
       <canvas class="display" id="display"></canvas>
+      <div class="config hidden" id="configwindow">
+          <div class="config-body">
+            <div class="config-cell">Color Scheme</div>
+            <div class="config-cell">
+              <select id="colorscheme">
+                <option value="yellow-blue">Yellow on Blue</option>
+                <option value="green-black">Green on Black</option>
+                <option value="white-black">White on Black</option>
+              </select>
+            </div>
+            <div class="config-cell">Display Type</div>
+            <div class="config-cell">
+              <select id="displaytype">
+                <option value="normal">Normal Display</option>
+                <option value="phosphor">Phosphor Display</option>
+              </select>
+            </div>
+            <div class="config-cell">
+              <button id="closeconfig">Close</button>
+            </div>
+          </div>
+      </div>
+      <div class="menu" id="menu">
+          <input type="file" id="fileinput" /><button id="loadbtn">Load</button>
+          <button id="startpause">Start</button>
+          <button id="turnoff">Turn Off</button>
+          <button id="configbtn">Config</button>
+      </div>
     </div>
     <noscript>This page contains webassembly and javascript content, please enable javascript in your browser.</noscript>
   </body>

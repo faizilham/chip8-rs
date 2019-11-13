@@ -1,5 +1,40 @@
+body {
+  font-family: sans-serif;
+  margin: 0;
+  text-align: center;
+}
+
 .display {
   width: 640px;
   height: 320px;
+  border-bottom: 1px solid black;
+}
+
+.config {
+  width: 640px;
+  height: 320px;
+}
+
+.config-body {
+  margin: 1em;
+}
+
+.config-cell {
+  margin-top: 0.25em;
+}
+
+.container {
+  width: 640px;
+  height: 350px;
   border: 1px solid black;
+  margin: 3em auto;
+  text-align: left;
+}
+
+.menu {
+  height: 30px;
+}
+
+.hidden {
+  display: none;
 }

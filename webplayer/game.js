@@ -14,8 +14,19 @@ export class Game {
   constructor(canvas) {
     this.machine = Machine.new();
     this.loader = new ROMLoader(this.machine);
-    // this.display = new Display(canvas);
-    this.display = new PhosphorDisplay(canvas);
+
+    const blueYellow = ["#000044", "#808088", "#FFFFCC"];
+    const blackGreen = ["#222222", "#77912B", "#CCFF33"];
+    const blackWhite = ["#222222", "#919191", "#FFFFFF"];
+
+    const colors = blueYellow;
+
+    this.normalDisplay = new Display(canvas);
+    this.phosphorDisplay = new PhosphorDisplay(canvas);
+
+    this.display = this.phosphorDisplay;
+    this.display.resetCanvas();
+
     this.beeper = new Beeper();
     this.keypad = new Keypad();
 
@@ -24,6 +35,27 @@ export class Game {
     this.animationId = null;
 
     this.stateListeners = [];
+  }
+
+  setConfig(config) {
+    if (!config || !this.halted) return;
+
+    if (config.displayType) {
+      if (config.displayType === "phosphor") {
+        this.display = this.phosphorDisplay;
+      } else {
+        this.display = this.normalDisplay;
+      }
+    }
+
+    if (config.colorScheme) {
+      const colors = config.colorScheme;
+
+      this.normalDisplay.setColor(colors[colors.length-1], colors[0]);
+      this.phosphorDisplay.setColor(colors, 2);
+
+      this.display.resetCanvas();
+    }
   }
 
   loop() {
@@ -52,7 +84,7 @@ export class Game {
     if (executionResult == ExecutionStatus.OK) {
       this.animationId = requestAnimationFrame(() => this.loop());
     } else {
-      this.halt();
+      this.halt(false);
     }
   }
 
@@ -64,8 +96,7 @@ export class Game {
 
     return this.loader.loadFile(file)
       .then(() => {
-        this.halt();
-        this.display.resetCanvas();
+        this.halt(true);
       })
       .catch((err) =>{
         console.error(err);
@@ -73,7 +104,6 @@ export class Game {
   }
 
   start() {
-    console.log("start", this.playing, this.halted);
     if (this.playing) return;
 
     if (this.halted) {
@@ -107,7 +137,7 @@ export class Game {
     this.updateListeners();
   }
 
-  halt() {
+  halt(resetCanvas) {
     this.halted = true;
     this.playing = false;
     this.beeper.stop();
@@ -116,6 +146,10 @@ export class Game {
     if (this.animationId) {
       cancelAnimationFrame(this.animationId);
       this.animationId = null;
+    }
+
+    if (resetCanvas) {
+      this.display.resetCanvas();
     }
 
     this.updateListeners();
