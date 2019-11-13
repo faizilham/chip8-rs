@@ -1,5 +1,6 @@
 // import wasm resources
 import {Game, GameState} from "./webplayer/game";
+import roms from "./roms/roms.json";
 
 const canvas = document.getElementById("display");
 const startpause = document.getElementById("startpause");
@@ -43,18 +44,80 @@ game.addListener((state) => {
   }
 });
 
-const loadbtn = document.getElementById("loadbtn");
+/// init rom list
 const fileinput = document.getElementById("fileinput");
+let openFileOption;
 
-loadbtn.onclick = () => {
+const romselect = document.getElementById("romselect");
+(function (){
+
+  function addOption(value, text, id) {
+    let option = document.createElement("option");
+    option.value = value;
+    option.textContent = text;
+
+    romselect.appendChild(option);
+    return option;
+  }
+
+  addOption("none", "Select ROM...");
+  openFileOption = addOption("file", "Open File...");
+
+  openFileOption.onclick = () => fileinput.click();
+
+  for (let i = 0; i < roms.length; i++) {
+    addOption(i, roms[i].title);
+  }
+
+  romselect.value = "none";
+})();
+
+romselect.onchange = (e) => {
+  let idx = e.target.value;
+
+  openFileOption.textContent = "Open File...";
+
+  if (idx === "none") return;
+  if (idx === "file") {
+    fileinput.click();
+    return;
+  }
+
+  const rom = roms[idx];
+
+  const req = new Request("roms/" + rom.file);
+
+  fetch(req).then((resp) => resp.arrayBuffer()).then((arraybuffer) => {
+    const buffer = new Uint8Array(arraybuffer);
+    game.loadBuffer(buffer);
+
+    const quirks = rom.quirks || {};
+    game.setConfig({ quirks });
+
+    startpause.removeAttribute("disabled");
+  });
+};
+
+fileinput.onchange = (e) => {
   const file = fileinput.files[0];
-
   if (!file) return;
+
+  let filename = file.name;
+
+  if (filename.length > 18) {
+    filename = filename.substring(0, 15) + "...";
+  }
+
+  openFileOption.textContent = "File: " + filename;
 
   game.loadFile(file).then(() => {
     startpause.removeAttribute("disabled");
   });
 }
+
+
+
+/// config window
 
 const configwindow = document.getElementById("configwindow");
 const menu = document.getElementById("menu");
@@ -81,7 +144,6 @@ openconfig.onclick = () => {
   toggleConfig(true);
 }
 
-/// config window
 
 const colorSchemeSelect = document.getElementById("colorscheme");
 colorSchemeSelect.value = "yellow-blue";
@@ -92,23 +154,22 @@ const colorSchemes = {
   "white-black": ["#222222", "#919191", "#FFFFFF"],
 };
 
-colorSchemeSelect.onchange = (e) => {
-  let scheme = e.target.value;
-  let config = {};
-  config.colorScheme = colorSchemes[scheme] || colorSchemes["yellow-blue"];
-  game.setConfig(config);
-}
-
 const displayType = document.getElementById("displaytype");
 displayType.value = "phosphor";
 
-displayType.onchange = (e) => {
-  let config = {
-    displayType: e.target.value
-  };
+function updateDisplayConfig() {
+  let config = {};
+
+  let scheme = colorSchemeSelect.value;
+  config.colorScheme = colorSchemes[scheme] || colorSchemes["yellow-blue"];
+
+  config.displayType = displayType.value;
 
   game.setConfig(config);
 }
+
+colorSchemeSelect.onchange = updateDisplayConfig;
+displayType.onchange = updateDisplayConfig;
 
 const closeconfig = document.getElementById("closeconfig");
 closeconfig.onclick = () => toggleConfig(false);

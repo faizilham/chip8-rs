@@ -1,8 +1,8 @@
 import { memory } from "wasm-pkg/chip8_rs_bg"
 
 const defaultColors = ["#000044", "#808088", "#FFFFCC"];
-const defaultOnColor = defaultColors[0];
-const defaultOffColor = defaultColors[defaultColors.length - 1];
+const defaultOnColor = defaultColors[defaultColors.length - 1];
+const defaultOffColor = defaultColors[0];
 
 export class Display {
   constructor(canvas, onColor = defaultOnColor, offColor = defaultOffColor) {

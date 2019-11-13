@@ -37,6 +37,10 @@ impl Machine {
 
     /*** Runtime Related ***/
 
+    pub fn set_quirks(&mut self, shift: bool, loadstore: bool) {
+        self.cpu.set_quirks(shift, loadstore);
+    }
+
     pub fn reset(&mut self) {
         self.cpu.reset();
         self.device.reset();

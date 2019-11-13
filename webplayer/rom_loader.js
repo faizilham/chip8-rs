@@ -33,6 +33,11 @@ export class ROMLoader {
     return promise;
   }
 
+  loadBuffer(buffer) {
+    this.buffer = buffer;
+    this.reloadROM();
+  }
+
   reloadROM() {
     if (!this.buffer) {
       console.log("ROM not yet loaded");

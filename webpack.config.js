@@ -1,5 +1,6 @@
 const path = require('path');
 
+const CopyPlugin = require("copy-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const MiniCSSExtractPlugin = require("mini-css-extract-plugin");
 const TerserJSPlugin = require('terser-webpack-plugin');
@@ -30,6 +31,9 @@ module.exports = {
   },
 
   plugins: [
+    new CopyPlugin([
+      {from: "roms/*.ch8", to: "roms/"},
+    ]),
     new HtmlWebpackPlugin({
       template: 'index.html',
     }),

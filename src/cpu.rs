@@ -55,6 +55,11 @@ impl CPU {
         ptr
     }
 
+    pub fn set_quirks(&mut self, shift: bool, loadstore: bool) {
+        self.quirk_shift = shift;
+        self.quirk_loadstore_reg = loadstore;
+    }
+
     pub fn reset(&mut self) {
         self.ir = 0;
         self.pc = PROGRAM_START;

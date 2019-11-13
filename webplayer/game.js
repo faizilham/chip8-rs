@@ -56,6 +56,11 @@ export class Game {
 
       this.display.resetCanvas();
     }
+
+    if (config.quirks) {
+      const quirks = config.quirks;
+      this.machine.set_quirks(!!quirks.shift, !!quirks.loadStore);
+    }
   }
 
   loop() {
@@ -101,6 +106,11 @@ export class Game {
       .catch((err) =>{
         console.error(err);
       });
+  }
+
+  loadBuffer(buffer) {
+    this.loader.loadBuffer(buffer);
+    this.halt(true);
   }
 
   start() {
