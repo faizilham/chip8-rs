@@ -99,7 +99,7 @@ export class Display {
     this.clearCanvas();
   }
 
-  finishDraw() {
+  finishDraw(pixelPtr, size) {
     // do nothing
   }
 }
@@ -130,6 +130,7 @@ export class PhosphorDisplay {
     ];
 
     this.maxColor = this.colors.length - 1;
+    this.maxPhysicalColor = this.maxColor * this.framePersistence;
 
     this.logicalDisplay = new Array(this.rows * this.cols).fill(0);
     this.physicalDisplay = new Array(this.rows * this.cols).fill(0);
@@ -159,7 +160,7 @@ export class PhosphorDisplay {
           this.logicalDisplay[idx] = pixels[idx];
 
           if (pixels[idx] === 1) {
-            this.physicalDisplay[idx] = this.maxColor * this.framePersistence;
+            this.physicalDisplay[idx] = this.maxPhysicalColor;
             this.drawPixel(col, row);
           }
         }
@@ -245,10 +246,24 @@ export class PhosphorDisplay {
   }
 
   finishDraw() {
-    let finished = this.draw();
+    this.context.beginPath();
+    this.context.fillStyle = this.colors[0];
 
-    if (!finished) {
-      requestAnimationFrame(() => this.finishDraw());
+    let i = 0;
+    for (let row = 0; row < this.rows; row++) {
+      for (let col = 0; col < this.cols; col++) {
+        let idx = i;
+        i++;
+
+        if (this.physicalDisplay[idx] === this.maxPhysicalColor) continue; // skip if fully on
+        if (this.physicalDisplay[idx] === 0) continue; // skip if fully off
+
+        this.physicalDisplay[idx] = 0;
+        this.drawPixel(col, row);
+      }
     }
+
+    this.context.closePath();
+    this.context.stroke();
   }
 }
