@@ -81,7 +81,7 @@ impl CPU {
         self.st > 0
     }
 
-    pub fn tick(&mut self, device: &mut dyn IOInterface) -> ExecutionStatus {
+    pub fn tick(&mut self, device: &mut impl IOInterface) -> ExecutionStatus {
         // fetch
         if self.pc > MEM_SIZE - 2 {
             log!("Reaching end of rom");
@@ -242,7 +242,7 @@ impl CPU {
     // OPCODES
 
     // 00E0 clear screen
-    fn op_00e0_cls(&mut self, device: &mut dyn IOInterface) -> ExecutionStatus {
+    fn op_00e0_cls(&mut self, device: &mut impl IOInterface) -> ExecutionStatus {
         device.clear_display();
 
         ExecutionStatus::OK
@@ -470,7 +470,7 @@ impl CPU {
     }
 
     // dxyn draw vx, vy, n
-    fn op_dxyn_draw(&mut self, high: u8, low: u8, device: &mut dyn IOInterface) -> ExecutionStatus {
+    fn op_dxyn_draw(&mut self, high: u8, low: u8, device: &mut impl IOInterface) -> ExecutionStatus {
         let vx = get2(high, low) as usize;
         let vy = get3(high, low) as usize;
         let x_start = self.register[vx];
@@ -504,7 +504,7 @@ impl CPU {
     }
 
     // ex9e skey skip key pressed Vx
-    fn op_ex9e_skey(&mut self, x: usize, device: &mut dyn IOInterface) -> ExecutionStatus {
+    fn op_ex9e_skey(&mut self, x: usize, device: &mut impl IOInterface) -> ExecutionStatus {
         let key = self.register[x];
 
         if device.key_pressed(key) {
@@ -515,7 +515,7 @@ impl CPU {
     }
 
     // exa1 snkey skip key not pressed Vx
-    fn op_exa1_snkey(&mut self, x: usize, device: &mut dyn IOInterface) -> ExecutionStatus {
+    fn op_exa1_snkey(&mut self, x: usize, device: &mut impl IOInterface) -> ExecutionStatus {
         let key = self.register[x];
 
         if !device.key_pressed(key) {
@@ -532,7 +532,7 @@ impl CPU {
     }
 
     // fx0a waitkey LD Vx, K
-    fn op_fx0a_waitkey(&mut self, x: usize, device: &mut dyn IOInterface) -> ExecutionStatus {
+    fn op_fx0a_waitkey(&mut self, x: usize, device: &mut impl IOInterface) -> ExecutionStatus {
         let key = device.read_any_key();
 
         if key == NO_KEY {
