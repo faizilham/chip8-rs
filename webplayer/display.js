@@ -80,7 +80,6 @@ export class Display {
   }
 
   clearCanvas() {
-    console.log("cls");
     this.context.beginPath();
 
     this.context.fillStyle = this.offColor;
@@ -132,7 +131,6 @@ export class PhosphorDisplay {
     this.maxColor = this.colors.length - 1;
     this.maxPhysicalColor = this.maxColor * this.framePersistence;
 
-    this.logicalDisplay = new Array(this.rows * this.cols).fill(0);
     this.physicalDisplay = new Array(this.rows * this.cols).fill(0);
   }
 
@@ -140,30 +138,24 @@ export class PhosphorDisplay {
     let i;
     this.context.beginPath();
 
-    if (pixelPtr != null) {
-      const pixels = new Uint8Array(memory.buffer, pixelPtr, size);
-      const changed = new Uint8Array(memory.buffer, changedPtr, size);
+    const pixels = new Uint8Array(memory.buffer, pixelPtr, size);
+    const changed = new Uint8Array(memory.buffer, changedPtr, size);
 
-      // update values and draw on
-      this.context.fillStyle = this.colors[this.maxColor];
+    // update values and draw on
+    this.context.fillStyle = this.colors[this.maxColor];
 
-      i = 0;
-      for (let row = 0; row < this.rows; row++) {
-        for (let col = 0; col < this.cols; col++) {
-          let idx = i;
-          i++;
+    i = 0;
+    for (let row = 0; row < this.rows; row++) {
+      for (let col = 0; col < this.cols; col++) {
+        let idx = i;
+        i++;
 
-          if (!changed[idx]) {
-            continue;
-          }
-
-          this.logicalDisplay[idx] = pixels[idx];
-
-          if (pixels[idx] === 1) {
-            this.physicalDisplay[idx] = this.maxPhysicalColor;
-            this.drawPixel(col, row);
-          }
+        if (!changed[idx] || pixels[idx] !== 1) {
+          continue;
         }
+
+        this.physicalDisplay[idx] = this.maxPhysicalColor;
+        this.drawPixel(col, row);
       }
     }
 
@@ -178,7 +170,7 @@ export class PhosphorDisplay {
         let idx = i;
         i++;
 
-        if (this.logicalDisplay[idx] === 1) continue; // skip if on
+        if (pixels[idx] === 1) continue; // skip if on
         if (this.physicalDisplay[idx] === 0) continue; // skip if fully off
 
         let currentLevel = this.physicalDisplay[idx] - 1;
@@ -220,14 +212,11 @@ export class PhosphorDisplay {
   }
 
   clearCanvas() {
-    for (let i = 0; i < this.logicalDisplay.length; i++) {
-      this.logicalDisplay[i] = 0;
-    }
+    // do nothing
   }
 
   resetCanvas() {
-    for (let i = 0; i < this.logicalDisplay.length; i++) {
-      this.logicalDisplay[i] = 0;
+    for (let i = 0; i < this.physicalDisplay.length; i++) {
       this.physicalDisplay[i] = 0;
     }
 
