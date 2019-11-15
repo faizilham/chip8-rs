@@ -26,6 +26,7 @@ export class Game {
 
     this.halted = true;
     this.playing = false;
+    this.needReload = true;
     this.animationId = null;
 
     this.stateListeners = [];
@@ -80,10 +81,16 @@ export class Game {
     this.display.draw(updates.display_ptr, updates.updated_ptr, updates.buffer_size);
 
     // request next frame
-    if (executionResult == ExecutionStatus.OK) {
+    if (executionResult === ExecutionStatus.OK) {
       this.animationId = requestAnimationFrame(() => this.loop());
     } else {
-      this.halt(false);
+      if (executionResult === ExecutionStatus.Halt) {
+        console.log("machine halted");
+      } else if (executionResult === ExecutionStatus.RuntimeError) {
+        console.log("machine halted because of runtime error");
+      }
+
+      this.halt(false, true);
     }
   }
 
@@ -95,7 +102,7 @@ export class Game {
 
     return this.loader.loadFile(file)
       .then(() => {
-        this.halt(true);
+        this.halt(true, false);
       })
       .catch((err) =>{
         console.error(err);
@@ -104,14 +111,19 @@ export class Game {
 
   loadBuffer(buffer) {
     this.loader.loadBuffer(buffer);
-    this.halt(true);
+    this.halt(true, false);
+  }
+
+  reloadROM() {
+    this.needReload = false;
+    return this.loader.reloadROM();
   }
 
   start() {
     if (this.playing) return;
 
     if (this.halted) {
-      if (!this.loader.reloadROM()) {
+      if (this.needReload && !this.reloadROM()) {
         return;
       }
 
@@ -141,9 +153,11 @@ export class Game {
     this.updateListeners();
   }
 
-  halt(resetCanvas) {
+  halt(resetCanvas = true, needReload = true) {
     this.halted = true;
     this.playing = false;
+    this.needReload = needReload;
+
     this.beeper.stop();
     this.display.finishDraw();
 

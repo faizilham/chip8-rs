@@ -88,18 +88,13 @@ impl Machine {
 
             match status {
                 ExecutionStatus::OK => (), // continue,
-                ExecutionStatus::Halt => {
-                    log!("machine halted");
-                    break;
-                },
-                ExecutionStatus::RuntimeError => {
-                    log!("machine halted because of runtime error");
-                    break;
-                }
+
+                // other than ok, break loop
                 ExecutionStatus::WaitForKey => {
                     status = ExecutionStatus::OK;
                     break;
-                }
+                },
+                _ => { break; }
             }
         }
 

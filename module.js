@@ -22,7 +22,7 @@ startpause.onclick = () => {
 }
 
 turnoff.onclick = () => {
-  game.halt(true);
+  game.halt();
 }
 
 game.addListener((state) => {
