@@ -1,4 +1,4 @@
-[
+export default [
     {
         "title": "15 PUZZLE",
         "file": "15 Puzzle [Roger Ivie].ch8",

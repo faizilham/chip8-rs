@@ -1,6 +1,6 @@
 // import wasm resources
 import {Game, GameState} from "./webplayer/game";
-import roms from "./roms/roms.json";
+import roms from "./roms";
 
 const canvas = document.getElementById("display");
 const startpause = document.getElementById("startpause");
