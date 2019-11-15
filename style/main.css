@@ -92,6 +92,10 @@ body {
   padding-top: 0.5em;
 }
 
+.romselect {
+  width: 200px;
+}
+
 .startpause {
   width: 4.5em;
 }

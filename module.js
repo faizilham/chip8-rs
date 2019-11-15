@@ -89,6 +89,8 @@ const romselect = document.getElementById("romselect");
     return option;
   }
 
+  romselect.innerHTML = "";
+
   addOption("none", "Select ROM...");
   openFileOption = addOption("file", "Open File...");
 
@@ -108,13 +110,19 @@ romselect.onchange = (e) => {
   openFileOption.textContent = "Open File...";
   startpause.setAttribute("disabled", "true");
 
-  if (idx === "none") return;
+  if (idx === "none") {
+    romselect.title = "";
+    return;
+  }
+
   if (idx === "file") {
     fileinput.click();
     return;
   }
 
   const rom = roms[idx];
+
+  romselect.title = rom.title;
 
   const req = new Request("roms/" + rom.file);
 
@@ -141,11 +149,13 @@ fileinput.onchange = (e) => {
 
   let filename = file.name;
 
-  if (filename.length > 18) {
-    filename = filename.substring(0, 15) + "...";
+  if (filename.length > 22) {
+    filename = filename.substring(0, 19) + "...";
   }
 
   openFileOption.textContent = "File: " + filename;
+
+  romselect.title = "File: " + file.name;
 
   game.loadFile(file).then(() => {
     startpause.removeAttribute("disabled");

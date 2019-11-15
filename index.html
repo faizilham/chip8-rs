@@ -65,7 +65,10 @@ A 0 B F      Z X C V</pre>
         </div>
         <div class="menu" id="menu">
             <input type="file" class="hidden" id="fileinput" accept=".ch8" />
-            <select class="select" id="romselect"></select>
+            <select class="select romselect" id="romselect">
+              <option>Select ROM...</option>
+              <option>Loading List...</option>
+            </select>
             <button id="startpause" class="startpause btn" disabled>Play</button>
             <button id="turnoff" class="btn" disabled>Turn Off</button>
             <button id="configbtn" class="btn" title="Set Configuration">Config</button>
