@@ -82,6 +82,8 @@ impl CPUTester {
     }
 }
 
+// TODO: tests these: 00e0, dxyn, Ex9E, ExA1, fx0a, Fx18
+
 #[wasm_bindgen_test]
 fn test_op_00ee_ret() {
     let mut tester = CPUTester::new();

@@ -40,7 +40,6 @@ impl CPU {
             dt: 0,
             st: 0,
 
-            // TODO: make these configurable through init and set methods
             quirk_shift: false,
             quirk_loadstore_reg: false,
 
@@ -100,7 +99,6 @@ impl CPU {
         // parse
         let result = match get1(high, low) {
             0x0 => match (high, low) {
-                // TODO: test?
                 // 00e0 clear display
                 (0, 0xE0) => self.op_00e0_cls(device),
 
@@ -182,11 +180,9 @@ impl CPU {
             // cxkk rand Vx = rand() & byte
             0xC => self.op_cxkk_rand(high, low),
 
-            // TODO: test?
             // dxyn - draw Vx, Vy, nibble
             0xD => self.op_dxyn_draw(high, low, device),
 
-            // TODO: test?
             0xE => {
                 let x = get2(high, low) as usize;
 
@@ -206,14 +202,12 @@ impl CPU {
                     // fx07 readdt Vx = DT
                     0x07 => self.op_fx07_readdt(x),
 
-                    // TODO: test?
                     // fx0a waitkey LD Vx, K
                     0x0A => self.op_fx0a_waitkey(x, device),
 
                     // fx15 loaddt DT = Vx
                     0x15 => self.op_fx15_loaddt(x),
 
-                    // TODO: test?
                     // Fx18 load st ST = Vx
                     0x18 => self.op_fx18_loadst(x),
 
@@ -653,11 +647,6 @@ fn runtime_error(_s : &str) -> ExecutionStatus {
 fn unknown_opcode(_high: u8, _low: u8) -> ExecutionStatus {
     log!("Runtime Error: unknown opcode 0x{:02x}{:02x}", _high, _low);
     ExecutionStatus::RuntimeError
-}
-
-fn unimplemented(_s: &str) -> ExecutionStatus {
-    log!("Unimplemented: {}", _s);
-    ExecutionStatus::OK
 }
 
 #[inline]
