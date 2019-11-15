@@ -107,7 +107,6 @@ export class Display {
   }
 }
 
-// TODO: optimize?
 export class PhosphorDisplay {
   constructor(canvas, colors = defaultColors, framePersistence = 2) {
     this.context = canvas.getContext("2d", {alpha: false});
@@ -122,20 +121,26 @@ export class PhosphorDisplay {
     canvas.width = this.canvasWidth;
     canvas.height = this.canvasHeight;
 
-    this.physicalDisplay = new Array(this.rows * this.cols).fill(0);
+    this.physicalDisplay = new Uint8Array(this.rows * this.cols);
 
     this.setColor(colors, framePersistence);
   }
 
   setColor(colors, framePersistence) {
-    // how long a level of color persist when the pixel is off
-    this.framePersistence = framePersistence;
+    // framePersistence: how long a level of color persist when the pixel is off
 
     // levels of colors possible between off (first index) and on (last index)
     this.colors = colors;
+    this.colorLevels = [];
+
+    for (let i = 0; i < colors.length; i++) {
+      for (let j = 0; j < framePersistence; j++) {
+        this.colorLevels.push(i);
+      }
+    }
 
     this.maxColor = this.colors.length - 1;
-    this.maxPhysicalColor = this.maxColor * this.framePersistence;
+    this.maxColorLevel = this.colorLevels.length - 1;
   }
 
   draw(pixelPtr, changedPtr, size) {
@@ -158,14 +163,12 @@ export class PhosphorDisplay {
           continue;
         }
 
-        this.physicalDisplay[idx] = this.maxPhysicalColor;
+        this.physicalDisplay[idx] = this.maxColorLevel;
         this.drawPixel(col, row);
       }
     }
 
     // dim off
-    let dimFinished = true;
-
     const dimmedPixels = new Array(this.colors.length - 1).fill(null).map(() => []);
 
     i = 0;
@@ -175,17 +178,19 @@ export class PhosphorDisplay {
         i++;
 
         if (pixels[idx] === 1) continue; // skip if on
-        if (this.physicalDisplay[idx] === 0) continue; // skip if fully off
 
-        let currentLevel = this.physicalDisplay[idx] - 1;
+        const prevLevel = this.physicalDisplay[idx];
+        if (prevLevel === 0) continue; // skip if fully off
+
+        const currentLevel = prevLevel - 1;
         this.physicalDisplay[idx] = currentLevel;
 
-        if (currentLevel % this.framePersistence === 0) {
-          let color = currentLevel / this.framePersistence;
-          dimmedPixels[color].push([col, row]);
-        }
+        if (this.colorLevels[currentLevel] !== this.colorLevels[prevLevel]) {
+          let color = this.colorLevels[currentLevel];
 
-        dimFinished = false;
+          dimmedPixels[color].push(col);
+          dimmedPixels[color].push(row);
+        }
       }
     }
 
@@ -194,16 +199,16 @@ export class PhosphorDisplay {
       let updates = dimmedPixels[color];
       this.context.fillStyle = this.colors[color];
 
-      for (let j = 0; j < updates.length; j++) {
-        let [col, row] = updates[j];
+      for (let j = 0; j < updates.length; j += 2) {
+        const col = updates[j];
+        const row = updates[j+1];
+
         this.drawPixel(col, row);
       }
     }
 
     this.context.closePath();
     this.context.stroke();
-
-    return dimFinished;
   }
 
   drawPixel(col, row) {
@@ -248,8 +253,8 @@ export class PhosphorDisplay {
         let idx = i;
         i++;
 
-        if (this.physicalDisplay[idx] === this.maxPhysicalColor) continue; // skip if fully on
-        if (this.physicalDisplay[idx] === 0) continue; // skip if fully off
+        const level = this.physicalDisplay[idx];
+        if ((level === 0) || (level === this.maxColorLevel)) continue; // skip if fully off or on
 
         this.physicalDisplay[idx] = 0;
         this.drawPixel(col, row);
