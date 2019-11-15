@@ -1,8 +1,11 @@
+/** global settings **/
+
 :root {
   --back-color: #000044;
   --middle-color: #808088;
   --front-color: #FFFFCC;
 }
+
 body {
   font-family: sans-serif;
   margin: 0;
@@ -11,15 +14,35 @@ body {
   color: var(--front-color);
 }
 
+/** page title **/
+
 .title {
   font-family: monospace;
   font-size: 32pt;
 }
 
+/** containers **/
+
+.outer {
+  width: 640px;
+  margin: 0 auto;
+}
+
+.container {
+  width: 640px;
+  height: 360px;
+  border: 1px solid var(--front-color);
+  text-align: left;
+}
+
+/** canvas display **/
+
 .display {
   width: 640px;
   height: 320px;
 }
+
+/** config & help window **/
 
 .window {
   width: 640px;
@@ -29,23 +52,11 @@ body {
   font-size: 10pt;
 }
 
-.startpause {
-  width: 4.5em;
-}
-
-.keymapping {
-  margin: 0;
-}
-
 .close-btn {
   margin-top: 1em;
 }
 
-.description {
-  max-width: 95%;
-  max-height: 48%;
-  overflow-y: auto;
-}
+/** config window components **/
 
 .config-title {
   margin-top: 0.5em;
@@ -56,17 +67,36 @@ body {
   margin-top: 0.25em;
 }
 
-.container {
-  width: 640px;
-  height: 360px;
-  border: 1px solid var(--front-color);
-  text-align: left;
+.chk-quirk {
+  display: block;
 }
 
-.outer {
-  width: 640px;
-  margin: 0 auto;
+/** help window components **/
+
+.keymapping {
+  margin: 0;
 }
+
+.description {
+  max-width: 95%;
+  max-height: 48%;
+  overflow-y: auto;
+}
+
+/** menu bar **/
+
+.menu {
+  height: 40px;
+  padding-left: 0.5em;
+  border-top: 1px solid var(--front-color);
+  padding-top: 0.5em;
+}
+
+.startpause {
+  width: 4.5em;
+}
+
+/** other generic components **/
 
 .btn {
   background-color: transparent;
@@ -86,17 +116,6 @@ body {
   cursor: default;
 }
 
-.chk-quirk {
-  display: block;
-}
-
-.menu {
-  height: 40px;
-  padding-left: 0.5em;
-  border-top: 1px solid var(--front-color);
-  padding-top: 0.5em;
-}
-
 .hidden {
   display: none;
 }
@@ -105,4 +124,20 @@ body {
   background-color: var(--back-color);
   color: var(--front-color);
   border: 1px solid var(--front-color);
+}
+
+/** footer **/
+
+.footer {
+  margin-top: 1.25em;
+  font-size: 9pt;
+  color: var(--middle-color);
+}
+
+.links {
+  color: var(--middle-color);
+}
+
+.links:hover {
+  color: var(--front-color);
 }
