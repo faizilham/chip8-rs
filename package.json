@@ -1,5 +1,5 @@
 {
-  "name": "wasm-template",
+  "name": "chip8-rs",
   "version": "1.0.0",
   "author": "Faiz Ilham <faizilham.faizz@gmail.com>",
   "license": "MIT",
