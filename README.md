@@ -1,6 +1,6 @@
 chip8-rs
 ========
-CHIP-8 implementation in Rust, compiled to wasm. Live Demo
+CHIP-8 implementation in Rust, compiled to wasm. [Live Demo](https://github.com/faizilham/chip8-rs)
 
 Features
 --------
