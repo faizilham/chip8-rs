@@ -33,6 +33,7 @@ module.exports = {
   plugins: [
     new CopyPlugin([
       {from: "roms/*.ch8", to: "roms", flatten: true},
+      {from: "assets", to: "assets"},
     ]),
     new HtmlWebpackPlugin({
       template: 'index.html',

@@ -163,6 +163,8 @@ fileinput.onchange = (e) => {
 }
 
 /// display configs
+const icon = document.getElementById("icon");
+
 const colorSchemeSelect = document.getElementById("colorscheme");
 colorSchemeSelect.value = "yellow-blue";
 
@@ -170,6 +172,12 @@ const colorSchemes = {
   "yellow-blue": ["#000044", "#808088", "#FFFFCC"],
   "green-black": ["#222222", "#77912B", "#CCFF33"],
   "white-black": ["#222222", "#919191", "#FFFFFF"],
+};
+
+const iconScheme = {
+  "yellow-blue": "icon_yb.png",
+  "green-black": "icon_gb.png",
+  "white-black": "icon_wb.png",
 };
 
 const displayType = document.getElementById("displaytype");
@@ -196,6 +204,11 @@ colorSchemeSelect.onchange = () => {
   root.style.setProperty("--back-color", colorScheme[0]);
   root.style.setProperty("--middle-color", colorScheme[1]);
   root.style.setProperty("--front-color", colorScheme[2]);
+
+  let iconId = colorSchemeSelect.value;
+  let iconFile = iconScheme[iconId] || iconScheme["yellow-blue"];
+
+  icon.href = `assets/${iconFile}`;
 };
 
 displayType.onchange = updateDisplayConfig;
