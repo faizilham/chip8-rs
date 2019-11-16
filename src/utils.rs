@@ -8,10 +8,11 @@ pub fn set_panic_hook() {
     //
     // For more details see
     // https://github.com/rustwasm/console_error_panic_hook#readme
-    #[cfg(feature = "console_error_panic_hook")]
+
+    // set panic hook only on development & test
+    #[cfg(all(feature = "console_error_panic_hook", debug_assertions))]
     console_error_panic_hook::set_once();
 }
-
 
 #[cfg(not(test))]
 macro_rules! log {
@@ -27,10 +28,18 @@ macro_rules! log {
 }
 
 #[allow(unused_macros)]
+#[cfg(debug_assertions)]
 macro_rules! debug {
     ($( $t:tt )*) => {
         web_sys::console::log_1(&format!( $( $t )* ).into());
     };
+}
+
+// disable debug for release
+#[cfg(test)]
+#[cfg(not(debug_assertions))]
+macro_rules! debug {
+    ($( $t:tt )*) => {};
 }
 
 #[cfg(not(test))]

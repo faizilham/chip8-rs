@@ -6,7 +6,8 @@
   "scripts": {
     "start": "yarn run wasm && yarn run web",
     "build": "yarn run build-wasm && yarn run build-web",
-    "build-wasm": "rimraf pkg && wasm-pack build --release && wasm-opt -Os -o pkg/chip8_rs_bg.wasm pkg/chip8_rs_bg.wasm",
+    "build-wasm": "rimraf pkg && wasm-pack build --release && yarn run build-opt",
+    "build-opt": "wasm-opt -Os -o pkg/chip8_rs_bg.wasm pkg/chip8_rs_bg.wasm || echo continuing without wasm-opt",
     "build-web": "rimraf dist && cross-env NODE_ENV=production webpack --config webpack.config.js",
     "wasm": "wasm-pack build --dev",
     "web": "cross-env NODE_ENV=development webpack-dev-server",
