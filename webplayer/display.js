@@ -169,7 +169,10 @@ export class PhosphorDisplay {
     }
 
     // dim off
-    const dimmedPixels = new Array(this.colors.length - 1).fill(null).map(() => []);
+    const dimmedPixels = new Array(this.colors.length - 1);
+    for (let j = 0; j < dimmedPixels.length; j++) {
+      dimmedPixels[j] = [];
+    }
 
     i = 0;
     for (let row = 0; row < this.rows; row++) {
