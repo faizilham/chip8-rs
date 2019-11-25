@@ -54,7 +54,7 @@ export class Game {
 
     if (config.quirks) {
       const quirks = config.quirks;
-      this.machine.set_quirks(!!quirks.shift, !!quirks.loadStore, !!quirks.clipSprite);
+      this.machine.set_quirks(!!quirks.shift, !!quirks.loadStore, !!quirks.wrapSprite);
     }
   }
 

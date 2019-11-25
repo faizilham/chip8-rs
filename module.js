@@ -50,13 +50,13 @@ game.addListener((state) => {
 /// quirk config
 let quirkShiftChk = document.getElementById("quirkShiftChk");
 let quirkLoadRegChk = document.getElementById("quirkLoadRegChk");
-let quirkClipSpriteChk = document.getElementById("quirkClipSpriteChk");
+let quirkWrapSpriteChk = document.getElementById("quirkWrapSpriteChk");
 
 function setQuirkConfig() {
   const quirks = {
     shift: quirkShiftChk.checked,
     loadStore: quirkLoadRegChk.checked,
-    clipSprite: quirkClipSpriteChk.checked,
+    wrapSprite: quirkWrapSpriteChk.checked,
   };
 
   game.setConfig({ quirks });
@@ -64,11 +64,11 @@ function setQuirkConfig() {
 
 quirkShiftChk.checked = false;
 quirkLoadRegChk.checked = false;
-quirkClipSpriteChk.checked = false;
+quirkWrapSpriteChk.checked = false;
 
 quirkShiftChk.onchange = setQuirkConfig;
 quirkLoadRegChk.onchange = setQuirkConfig;
-quirkClipSpriteChk.onchange = setQuirkConfig;
+quirkWrapSpriteChk.onchange = setQuirkConfig;
 
 /// rom list
 const romdescription = document.getElementById("romdescription");
@@ -135,7 +135,7 @@ romselect.onchange = (e) => {
 
     quirkShiftChk.checked = !!quirks.shift;
     quirkLoadRegChk.checked = !!quirks.loadStore;
-    quirkClipSpriteChk.checked = !!quirks.clipSprite;
+    quirkWrapSpriteChk.checked = !!quirks.wrapSprite;
 
     romdescription.innerHTML = `<h4>${rom.title} Description</h4>${rom.description}`
 

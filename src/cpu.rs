@@ -472,8 +472,8 @@ impl CPU {
     fn op_dxyn_draw(&mut self, high: u8, low: u8, device: &mut impl IOInterface) -> ExecutionStatus {
         let vx = get2(high, low) as usize;
         let vy = get3(high, low) as usize;
-        let x_start = self.register[vx];
-        let y_start = self.register[vy];
+        let x_start = self.register[vx] % 64;
+        let y_start = self.register[vy] % 32;
 
         let mut vf = 0;
 

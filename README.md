@@ -11,7 +11,7 @@ Features
 
     1. Shift quirk: opcodes 8xy6 & 8xyE shift Vy instead of Vx
     2. Load/Store register quirk: opcodes Fx55 & Fx65 won't increase I register by x + 1
-    3. Sprite clipping quirk: when drawn outside of display, clip sprite instead of wrapping around
+    3. Sprite wrapping quirk: when parts of sprite are drawn outside of display, wrap it instead of clipping it
 
 - Lightweight page (transfer size < 30kb, total size < 70kb)
 

@@ -37,7 +37,7 @@ pub struct IODevice {
     display_cleared: bool,
     display_updated: bool,
 
-    quirk_clip_sprite: bool,
+    quirk_wrap_sprite: bool,
 }
 
 impl IODevice {
@@ -52,12 +52,12 @@ impl IODevice {
             released_keys: 0,
             display_cleared: false,
             display_updated: false,
-            quirk_clip_sprite: false,
+            quirk_wrap_sprite: false,
         }
     }
 
     pub fn set_quirks(&mut self, clip_sprite: bool) {
-        self.quirk_clip_sprite = clip_sprite;
+        self.quirk_wrap_sprite = clip_sprite;
     }
 
     pub fn reset(&mut self) {
@@ -109,7 +109,7 @@ impl IOInterface for IODevice {
     }
 
     fn draw_pixel(&mut self, x: u8, y: u8) -> u8 {
-        if self.quirk_clip_sprite && ((x > 63) || (y > 31)) {
+        if !self.quirk_wrap_sprite && ((x > 63) || (y > 31)) {
             return 0;
         }
 
